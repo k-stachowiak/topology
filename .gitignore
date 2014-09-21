@@ -29,3 +29,4 @@
 Debug
 *vcxproj*
 build
+*.sw[op]

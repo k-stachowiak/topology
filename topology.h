@@ -263,7 +263,7 @@ struct adj_matrix_graph::out_iterator :
 
     // Iterator specific operations.
     out_iterator& operator++() {
-        current = std::find(current, last, true);
+        current = std::find(current + 1, last, true);
         return *this;
     }
 
@@ -279,10 +279,15 @@ struct adj_matrix_graph::out_iterator :
 };
 
 adj_matrix_graph::out_iterator adj_matrix_graph::out_begin(node_id u) const {
+
     auto first = begin(matrix) + u * nodes;
     auto last = first + nodes;
+    out_iterator result { first, last };
+
     auto first_true = std::find(first, last, true);
-    return out_iterator { first_true, last };
+    result.current = first_true;
+
+    return result;
 }
 
 adj_matrix_graph::out_iterator adj_matrix_graph::out_end(node_id u) const {

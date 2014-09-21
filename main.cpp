@@ -3,7 +3,8 @@
 #include <vector>
 
 #include "topology.h"
-#include "metrics.h"
+#include "metric.h"
+#include "metric_map.h"
 #include "algorithms.h"
 
 template <int M>
@@ -74,14 +75,15 @@ void print(const path& p, const MetricMap& mm) {
     for (const auto& n : p) {
         std::cout << n << ", ";
     }
-    std::cout << " -> " << get_metric(p, mm);
+    std::cout << " -> " << get_metric(p, mm) << std::endl;
 }
 
 template <class MetricMap>
 void print(const tree& t, const MetricMap& mm) {
 	for_each_edge(t, [](node_id u, node_id v) {
-        std::cout << u << " - " << v << " -> " ;
+        std::cout << u << " - " << v << " -> ";
 	});
+    std::cout << std::endl;
 }
 
 void single_metric_test() {
@@ -115,6 +117,14 @@ void multi_metric_test() {
 
     std::cout << "Multi metric test." << std::endl;
 
+	auto m = prepare_metric();
+
+	auto g1 = prepare_adj_lst();
+    g1.set2(5, 4);
+
+	auto g2 = prepare_adj_mat();
+    g2.set2(0, 2);
+
 	auto ms = prepare_multi_metric();
 	path pdm = dijkstra(g1, ms, 0, 4);
     print(pdm, m);
@@ -142,7 +152,8 @@ void file_iteration() {
 }
 
 int main() {
-    algorithm_test();
+    single_metric_test();
+    multi_metric_test();
 	return 0;
 }
 
