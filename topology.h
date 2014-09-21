@@ -28,10 +28,11 @@ using path = std::deque<node_id>;
 // operations:
 // - (member) add edge (one direction): node -> node -> ()
 // - (member) add edge (both directions): node -> node -> ()
-// - (member) adjacent nodes: node -> [node]
+// - (member) out begin/end: node -> iterator(node)
 // - (friend) for each edge: callback -> ()
 
 struct tree {
+
 	std::multimap<node_id, node_id> m_impl;
 
 	// Semiregular: by default
@@ -54,15 +55,13 @@ struct tree {
 		add(to, from);
 	}
 
-	std::deque<node_id> operator()(node_id x) const {
-		auto range = m_impl.equal_range(x);
-		std::deque<node_id> result;
-		std::transform(
-			range.first, range.second,
-			std::back_inserter(result),
-			pair_second<node_id, node_id>());
-		return result;
-	}
+    std::multimap<node_id, node_id>::const_iterator out_begin(node_id x) const {
+        return m_impl.equal_range(x).first;
+    }
+
+    std::multimap<node_id, node_id>::const_iterator out_end(node_id x) const {
+        return m_impl.equal_range(x).second;
+    }
 
 	template <class Func>
 	friend void for_each_edge(const tree& t, Func f) {
@@ -75,7 +74,9 @@ struct tree {
 // concept Graph g
 //
 // operations:
-// - (member) adjacent nodes: node -> [node]
+// - (member) out begin/end: node -> iterator(node)
+// - (member) set: node -> node -> ()
+// - (member) set2: node -> node -> ()  -- bidirectional
 // - (friend) nodes count: g -> size_t
 // - (friend) for each edge: callback -> ()
 
@@ -96,9 +97,25 @@ struct adj_list_graph {
 	}
 
 	// Operations:
-	const std::deque<node_id>& operator()(node_id u) const {
-		return adjacency[u];
-	}
+    std::deque<node_id>::const_iterator out_begin(node_id x) const {
+        return adjacency[x].begin();
+    }
+
+    std::deque<node_id>::const_iterator out_end(node_id x) const {
+        return adjacency[x].end();
+    }
+
+    void set(node_id from, node_id to) {
+        if (from >= static_cast<node_id>(adjacency.size())) {
+            adjacency.resize(from + 1);
+        }
+        adjacency[from].push_back(to);
+    }
+
+    void set2(node_id from, node_id to) {
+        set(from, to);
+        set(to, from);
+    }
 
 	friend size_t nodes_count(const adj_list_graph& g) {
 		return g.adjacency.size();
@@ -116,6 +133,8 @@ struct adj_list_graph {
 };
 
 struct adj_matrix_graph {
+
+    struct out_iterator;
 
 	// This is an adjacency matric implementation of the Graph concept.
 
@@ -155,6 +174,9 @@ struct adj_matrix_graph {
 	}
 
 	// Operations:
+    out_iterator out_begin(node_id u) const;
+    out_iterator out_end(node_id u) const;
+
 	std::deque<node_id> operator()(node_id u) const {
 		std::deque<node_id> result;
 		auto first = begin(matrix) + u * nodes;
@@ -166,6 +188,33 @@ struct adj_matrix_graph {
 		}
 		return result;
 	}
+
+    void set(node_id from, node_id to) {
+
+        if (static_cast<node_id>(matrix.size()) > (from * from)) {
+            matrix[nodes * from + to] = true;
+            return;
+        }
+
+        size_t new_nodes = from + 1;
+        std::deque<bool> new_matrix(new_nodes * new_nodes, false);
+
+        for (size_t f = 0; f < nodes; ++f) {
+            for (size_t t = 0; t < nodes; ++t) {
+                new_matrix[new_nodes * f + t] = matrix[nodes * f + t];
+            }
+        }
+
+        new_matrix[new_nodes * from + to] = true;
+
+        nodes = new_nodes;
+        matrix = std::move(new_matrix);
+    }
+
+    void set2(node_id from, node_id to) {
+        set(from, to);
+        set(to, from);
+    }
 
 	friend size_t nodes_count(const adj_matrix_graph& g) {
 		return g.nodes;
@@ -183,5 +232,62 @@ struct adj_matrix_graph {
 		}
 	}
 };
+
+// Implementation of an outgoing iterator for an adjacency matrix.
+// It will traverse an adjacency matrix row, skipping false entries.
+struct adj_matrix_graph::out_iterator :
+        std::iterator<std::forward_iterator_tag, node_id> {
+
+    typedef std::deque<bool>::const_iterator impl_type;
+
+    impl_type first, last;
+    impl_type current;
+
+    // Semiregular:
+    out_iterator() = default;
+    out_iterator(const out_iterator&) = default;
+    out_iterator& operator=(const out_iterator&) = default;
+
+    friend bool operator==(const out_iterator& x, const out_iterator& y) {
+        return x.current == y.current;
+    }
+
+    friend bool operator!=(const out_iterator& x, const out_iterator& y) {
+        return !(x == y);
+    }
+
+    // Custom constructor.
+    out_iterator(impl_type first, impl_type last) :
+        first { first }, last { last }, current { first }
+    {}
+
+    // Iterator specific operations.
+    out_iterator& operator++() {
+        current = std::find(current, last, true);
+        return *this;
+    }
+
+    const out_iterator operator++(int) {
+        out_iterator copy = *this;
+        ++(*this);
+        return copy;
+    }
+
+    node_id operator*() const {
+        return std::distance(first, current);
+    }
+};
+
+adj_matrix_graph::out_iterator adj_matrix_graph::out_begin(node_id u) const {
+    auto first = begin(matrix) + u * nodes;
+    auto last = first + nodes;
+    auto first_true = std::find(first, last, true);
+    return out_iterator { first_true, last };
+}
+
+adj_matrix_graph::out_iterator adj_matrix_graph::out_end(node_id u) const {
+    auto last = begin(matrix) + u * nodes + nodes;
+    return out_iterator { last, last };
+}
 
 #endif

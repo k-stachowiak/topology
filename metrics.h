@@ -21,11 +21,15 @@
 //
 // NOTE: ALL NUMERIC BUILT-IN TYPES SATISFY THESE REQUIREMENTS.
 
-template <typename T, int M, typename Cmp>
+template <typename T, int M, typename Cmp = std::less<T>>
 // T is a Metric,
-// M is a natural number,
+// M is a natural number - the count of the metrics,
 // Cmp defines a total ordering of an array of Metrics.
 struct multi_metric {
+
+    typedef T metric_type;
+    typedef Cmp metric_compare;
+    enum { metric_count = M };
 
 	// This type wraps a collection of metrics (of type T) into
 	// an array, and implements the typical arythmetic operations
@@ -46,12 +50,10 @@ struct multi_metric {
 	}
 
 	// Semiregular:
-	multi_metric() {}
-	~multi_metric() {}
+	multi_metric() = default;
+	~multi_metric() = default;
 	multi_metric(const multi_metric& x) = default;
-	multi_metric(multi_metric&& x) :
-		m_impl{ std::move(x.m_impl) }
-	{}
+	multi_metric(multi_metric&& x) : m_impl(x.m_impl) {}
 	multi_metric& operator=(const multi_metric& x) = default;
 	multi_metric& operator=(multi_metric&& x) {
 		m_impl = std::move(x.m_impl);
@@ -139,10 +141,10 @@ struct hop_map {
 
 	// Semiregular: by default.
 	// Regular:
-	friend bool operator==(const metric_map& x, const metric_map& y) {
+	friend bool operator==(const hop_map& x, const hop_map& y) {
 		return true;
 	}
-	friend bool operator!=(const metric_map& x, const metric_map& y) {
+	friend bool operator!=(const hop_map& x, const hop_map& y) {
 		return !(x == y);
 	}
 
@@ -191,5 +193,63 @@ public:
 		return m_impl.at(std::make_pair(from, to));
 	}
 };
+
+template <int I, typename T, int M, typename Cmp = std::less<T>>
+class index_mm_adapter {
+
+    metric_map<multi_metric<T, M, Cmp>> m_impl;
+
+public:
+    // Semiregular: by default.
+    // Regular:
+	friend bool operator==(const index_mm_adapter& x, const index_mm_adapter& y) {
+		return x.m_impl.m_impl.at(I) == y.m_impl.m_impl.at(I);
+	}
+	friend bool operator!=(const index_mm_adapter& x, const index_mm_adapter& y) {
+		return !(x == y);
+	}
+
+	// Operations:
+	void set(node_id from, node_id to, const T& m) {
+		m_impl.m_impl[std::make_pair(from, to)][I] = m;
+	}
+
+	void set2(node_id from, node_id to, const T& m) {
+		set(from, to, m);
+		set(to, from, m);
+	}
+
+	T operator()(node_id from, node_id to) const {
+		return m_impl.m_impl.at(std::make_pair(from, to)).at(I);
+	}
+};
+
+// Metric aggregation:
+//
+// This idea consists in being able to map topological structures to 
+// metric values:
+//
+// path -> metric_map -> metric
+// tree -> metric_map -> metric
+// ...
+
+// Basic metric aggregation.
+template <class MetricMap>
+typename MetricMap::value_type get_metric(const path& p, const MetricMap& mm) {
+
+    auto first = p.begin();
+    auto last = p.end();
+
+    typename MetricMap::value_type result = metric_limits<
+        typename MetricMap::value_type>::zero();
+
+    while (first + 1 != last) {
+        auto next = first + 1;
+        result = result + mm(*first, *next);
+        first = next;
+    }
+
+    return result;
+}
 
 #endif

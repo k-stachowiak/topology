@@ -91,20 +91,23 @@ namespace detail {
 				break;
 			}
 
-			for (node_id v : g(u)) {
+            std::for_each(
+                    g.out_begin(u), g.out_end(u),
+                    [u, &out_dists, &out_preds, &mm, &open](node_id v) mutable {
 				typename MetricMap::value_type new_dist = out_dists[u] + mm(u, v);
 				if (new_dist < out_dists[v]) {
 					out_dists[v] = new_dist;
 					out_preds[v] = u;
 					open.insert(v);
 				}
-			}
+			});
+
 			open.erase(u);
 		}
 	}
 
 	template <class Graph, class MetricMap>
-	path bellman_ford_relax(
+	void bellman_ford_relax(
 			const Graph& g, const MetricMap& mm,
 			node_id src,
 			std::vector<node_id>& out_preds,
@@ -118,7 +121,7 @@ namespace detail {
 		out_dists[src] = metric_limits<typename MetricMap::value_type>::zero();
 
 		for (node_id i = 0; i < (N - 1); ++i) {
-			for_each_edge(g, [&dists, &preds, &mm](node_id u, node_id v) {
+			for_each_edge(g, [&out_dists, &out_preds, &mm](node_id u, node_id v) {
 				typename MetricMap::value_type new_dist = out_dists[u] + mm(u, v);
 				if (out_dists[v] > new_dist) {
 					out_dists[v] = new_dist;
