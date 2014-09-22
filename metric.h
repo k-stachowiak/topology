@@ -7,17 +7,19 @@
 // operations:
 // - (member) get weight : node -> node -> weight (read / write access)
 
+
 template <class Weight>
-struct hop_map {
+// Weight fulfills the weiht concept
+struct hop_metric {
 
 	typedef Weight value_type;
 
 	// Semiregular: by default.
 	// Regular:
-	friend bool operator==(const hop_map& x, const hop_map& y) {
+	friend bool operator==(const hop_metric& x, const hop_metric& y) {
 		return true;
 	}
-	friend bool operator!=(const hop_map& x, const hop_map& y) {
+	friend bool operator!=(const hop_metric& x, const hop_metric& y) {
 		return !(x == y);
 	}
 
@@ -29,7 +31,7 @@ struct hop_map {
 
 template <class Weight, bool bidirectional = false>
 // Weight fulfills the weiht concept
-class metric {
+class map_metric {
 
 	// This type enables storing a map between edges and their metrics.
 	// It will be required for the optimization algorithms that interpret
@@ -42,10 +44,10 @@ public:
 
 	// Semiregular: by default.
 	// Regular:
-	friend bool operator==(const metric& x, const metric& y) {
+	friend bool operator==(const map_metric& x, const map_metric& y) {
 		return x.m_impl == y.m_impl;
 	}
-	friend bool operator!=(const metric& x, const metric& y) {
+	friend bool operator!=(const map_metric& x, const map_metric& y) {
 		return !(x == y);
 	}
 

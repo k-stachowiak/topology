@@ -16,8 +16,8 @@ struct cost_multi_compare {
 
 using dummy_multi_weight = multi_weight<double, 2, cost_multi_compare<2>>;
 
-metric<double, true> prepare_weight() {
-	metric<double, true> result;
+map_metric<double, true> prepare_weight() {
+	map_metric<double, true> result;
 	result(0, 1) = 7.0;
 	result(0, 2) = 9.0;
 	result(0, 5) = 14.0;
@@ -30,8 +30,8 @@ metric<double, true> prepare_weight() {
 	return result;
 }
 
-metric<dummy_multi_weight, true> prepare_multi_weight() {
-	metric<dummy_multi_weight, true> result;
+map_metric<dummy_multi_weight, true> prepare_multi_weight() {
+	map_metric<dummy_multi_weight, true> result;
 	result(0, 1) = dummy_multi_weight{ { { 7.0, 70.0 } } };
 	result(0, 2) = dummy_multi_weight{ { { 9.0, 90.0 } } };
 	result(0, 5) = dummy_multi_weight{ { { 14.0, 140.0 } } };
