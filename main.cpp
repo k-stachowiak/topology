@@ -168,8 +168,8 @@ void index_metric_test() {
 	auto g = prepare_full_adj_mat();
     auto m = prepare_multi_weight();
 
-    static_index_metric_adapter<decltype(m), 0> m0 { m };
-    static_index_metric_adapter<decltype(m), 1> m1 { m };
+    index_metric_adapter<decltype(m)> m0 { m, 0 };
+    index_metric_adapter<decltype(m)> m1 { m, 1 };
 
     path p0 = dijkstra(g, m0, 0, 5);
     path p1 = dijkstra(g, m1, 0, 5);
