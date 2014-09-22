@@ -78,8 +78,8 @@ namespace detail {
 
 		out_preds.resize(N);
 		out_dists.clear();
-		out_dists.resize(N, metric_limits<typename MetricMap::value_type>::inf());
-		out_dists[src] = metric_limits<typename MetricMap::value_type>::zero();
+		out_dists.resize(N, weight_limits<typename MetricMap::value_type>::inf());
+		out_dists[src] = weight_limits<typename MetricMap::value_type>::zero();
 
 		while (!open.empty()) {
 
@@ -117,8 +117,8 @@ namespace detail {
 
 		out_preds.resize(N);
 		out_dists.clear();
-		out_dists.resize(N, metric_limits<typename MetricMap::value_type>::inf());
-		out_dists[src] = metric_limits<typename MetricMap::value_type>::zero();
+		out_dists.resize(N, weight_limits<typename MetricMap::value_type>::inf());
+		out_dists[src] = weight_limits<typename MetricMap::value_type>::zero();
 
 		for (node_id i = 0; i < (N - 1); ++i) {
 			for_each_edge(g, [&out_dists, &out_preds, &mm](node_id u, node_id v) {

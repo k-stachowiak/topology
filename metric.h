@@ -1,130 +1,142 @@
-#ifndef METRIC_H
-#define METRIC_H
-
-#include <cassert>
-
-#include <map>
-#include <array>
-#include <deque>
-#include <utility>
-#include <iterator>
-#include <algorithm>
-
-#include "config.h"
+#ifndef METRIC_MAP_H
+#define METRIC_MAP_H
 
 // concept Metric m
-// - is regular
-// - is totally ordered
 //
+// Effectively metric is a function from node pairs to an edge weight.
 // operations:
-// - (friend) + : m -> m -> m
-//
-// NOTE: ALL NUMERIC BUILT-IN TYPES SATISFY THESE REQUIREMENTS.
+// - (member) get weight : node -> node -> weight (read / write access)
 
-template <typename T, int M, typename Cmp = std::less<T>>
-// T is a Metric,
-// M is a natural number - the count of the metrics,
-// Cmp defines a total ordering of an array of Metrics.
-struct multi_metric {
+template <class Weight>
+struct hop_map {
 
-    typedef T metric_type;
-    typedef Cmp metric_compare;
-    enum { metric_count = M };
+	typedef Weight value_type;
 
-	// This type wraps a collection of metrics (of type T) into
-	// an array, and implements the typical arythmetic operations
-	// in a member by member fashion.
-	//
-	// The M argument defines the number of metrics stored in the type
-	// and guarantees compile time protection against operations on
-	// multi-metrics of different metric counts.
-	//
-	// Additionally the Cmp functor type must be provided for
-	// implementation of the total ordering, which cannot be easily
-	// implemented member by member.
-
-	std::array<T, M> m_impl;
-
-	multi_metric(const std::array<T, M>& values) {
-		std::copy(begin(values), end(values), begin(m_impl));
-	}
-
-	// Semiregular:
-	multi_metric() = default;
-	~multi_metric() = default;
-	multi_metric(const multi_metric& x) = default;
-	multi_metric(multi_metric&& x) : m_impl(x.m_impl) {}
-	multi_metric& operator=(const multi_metric& x) = default;
-	multi_metric& operator=(multi_metric&& x) {
-		m_impl = std::move(x.m_impl);
-		return *this;
-	}
-
+	// Semiregular: by default.
 	// Regular:
-	friend bool operator==(const multi_metric& x, const multi_metric& y) {
-		return x == y;
+	friend bool operator==(const hop_map& x, const hop_map& y) {
+		return true;
 	}
-	friend bool operator!=(const multi_metric& x, const multi_metric& y) {
+	friend bool operator!=(const hop_map& x, const hop_map& y) {
 		return !(x == y);
 	}
 
-	// Totally ordered:
-	friend bool operator<(const multi_metric& x, const multi_metric& y) {
-		static Cmp cmp;
-		return cmp(x.m_impl, y.m_impl);
+	// Operations:
+	Weight operator()(node_id from, node_id to) const {
+		return weight_limits<Weight>::one();
 	}
-	friend bool operator>(const multi_metric& x, const multi_metric& y) {
-		return y < x;
+};
+
+template <class Weight, bool bidirectional = false>
+// Weight fulfills the weiht concept
+class metric {
+
+	// This type enables storing a map between edges and their metrics.
+	// It will be required for the optimization algorithms that interpret
+	// the edge weights.
+
+	std::map<std::pair<node_id, node_id>, Weight> m_impl;
+
+public:
+	typedef Weight value_type;
+
+	// Semiregular: by default.
+	// Regular:
+	friend bool operator==(const metric& x, const metric& y) {
+		return x.m_impl == y.m_impl;
 	}
-	friend bool operator<=(const multi_metric& x, const multi_metric& y) {
-		return !(y > x);
-	}
-	friend bool operator>=(const multi_metric& x, const multi_metric& y) {
-		return !(y < x);
+	friend bool operator!=(const metric& x, const metric& y) {
+		return !(x == y);
 	}
 
 	// Operations:
-	friend multi_metric operator+(multi_metric x, const multi_metric& y) {
-		for (size_t i = 0; i < x.m_impl.size(); ++i) {
-			x.m_impl[i] += y.m_impl[i];
+	const Weight operator()(node_id from, node_id to) const {
+
+		if (!bidirectional) {
+			return m_impl.at(std::make_pair(to, from));
 		}
-		return x;
+
+		auto it = m_impl.find(std::make_pair(from, to));
+		if (it != end(m_impl)) {
+			return it->second;
+		} else {
+			return m_impl.at(std::make_pair(to, from));
+		}
+	}
+
+	Weight& operator()(node_id from, node_id to) {
+
+		if (!bidirectional) {
+			return m_impl[std::make_pair(from, to)];
+		}
+
+		auto it = m_impl.find(std::make_pair(from, to));
+		if (it != end(m_impl)) {
+			return it->second;
+		} else {
+			return m_impl[std::make_pair(from, to)];
+		}
 	}
 };
 
-// concept MetricLimits ml<T>
+/*
+template <int I, typename T, int M, typename Cmp = std::less<T>>
+class index_mm_adapter {
+
+    metric_map<multi_weight<T, M, Cmp>> m_impl;
+
+public:
+    // Semiregular: by default.
+    // Regular:
+	friend bool operator==(const index_mm_adapter& x, const index_mm_adapter& y) {
+		return x.m_impl.m_impl.at(I) == y.m_impl.m_impl.at(I);
+	}
+	friend bool operator!=(const index_mm_adapter& x, const index_mm_adapter& y) {
+		return !(x == y);
+	}
+
+	// Operations:
+	void set(node_id from, node_id to, const T& m) {
+		m_impl.m_impl[std::make_pair(from, to)][I] = m;
+	}
+
+	void set2(node_id from, node_id to, const T& m) {
+		set(from, to, m);
+		set(to, from, m);
+	}
+
+	T operator()(node_id from, node_id to) const {
+		return m_impl.m_impl.at(std::make_pair(from, to)).at(I);
+	}
+};
+*/
+
+// Weight aggregation:
 //
-// operations:
-// - (static) inf : () -> T::infinity
-// - (static) zero : () -> T::zero
-// - (static) one : () -> T::one
+// This idea consists in being able to map topological structures to 
+// metric values:
+//
+// path -> metric_map -> metric
+// tree -> metric_map -> metric
+// ...
 
-template <class T>
-// T is a built-in numeric type accepted by std::numeric_limits.
-struct metric_limits {
-	static T inf() { return std::numeric_limits<T>::infinity(); }
-	static T zero() { return 0; }
-	static T one() { return 1; }
-};
+// Basic metric aggregation.
+template <class Metric>
+typename Metric::value_type get_weight(const path& p, const Metric& m) {
 
-template <class T, int M, class Cmp>
-// Requirements for T, M and Cmp the same as in the multi_metric type.
-struct metric_limits<multi_metric<T, M, Cmp>> {
-	static multi_metric<T, M, Cmp> inf() {
-		multi_metric<T, M, Cmp> result;
-		result.m_impl.fill(std::numeric_limits<T>::infinity());
-		return result;
-	}
-	static multi_metric<T, M, Cmp> zero() {
-		multi_metric<T, M, Cmp> result;
-		result.m_impl.fill(0);
-		return result;
-	}
-	static T one() {
-		multi_metric<T, M, Cmp> result;
-		result.m_impl.fill(1);
-		return result;
-	}
-};
+    auto first = p.begin();
+    auto last = p.end();
+
+    typename Metric::value_type result = weight_limits<
+        typename Metric::value_type>::zero();
+
+    while (first + 1 != last) {
+        auto next = first + 1;
+        result = result + m(*first, *next);
+        first = next;
+    }
+
+    return result;
+}
 
 #endif

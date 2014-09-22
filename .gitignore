@@ -30,3 +30,8 @@ Debug
 *vcxproj*
 build
 *.sw[op]
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+top
+Makefile
