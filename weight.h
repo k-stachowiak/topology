@@ -21,14 +21,16 @@
 //
 // NOTE: ALL NUMERIC BUILT-IN TYPES SATISFY THESE REQUIREMENTS.
 
+/// Weight comcept implementation to aggregate many weights into single
+/// objects.
 template <typename T, int M, typename Cmp = std::less<T>>
 // T is a Weight,
 // M is a natural number - the count of the weights,
 // Cmp defines a total ordering of an array of weights.
 struct multi_weight {
 
-    typedef T weight_type;
-    typedef Cmp weight_compare;
+    typedef T value_type;
+    typedef Cmp value_compare;
     enum { weight_count = M };
 
 	// This type wraps a collection of weights (of type T) into
@@ -51,7 +53,6 @@ struct multi_weight {
 
 	// Semiregular:
 	multi_weight() = default;
-	~multi_weight() = default;
 	multi_weight(const multi_weight& x) = default;
 	multi_weight(multi_weight&& x) : m_impl(x.m_impl) {}
 	multi_weight& operator=(const multi_weight& x) = default;

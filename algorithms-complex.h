@@ -1,19 +1,17 @@
-#ifndef META_ALGORITHMS_H
-#define META_ALGORITHMS_H
+#ifndef ALGORITHMS_COMPLEX_H
+#define ALGORITHMS_COMPLEX_H
 
-#include "algorighms.h"
+#include "algorighms-basic.h"
 
 template <class Graph, typename T>
 path larac(const Graph& g,
-           const metric_map<multi_metric<T, 2, std::less<T>>>& mm,
+           const map_metric<multi_weight<T, 2>>& mm,
            T constraint,
            node_id src, node_id dst) {
 
-    using mm_type = std::remove_const<std::remove_reference<
-            decltype(mm)>::type>::type;
+    static_index_metric_adapter<decltype(mm), 0> cm { mm };
+    static_index_metric_adapter<decltype(mm), 1> dm { mm };
 
-    auto cmm = index_mmetric_adapter<mm_type, 0>(mm);
-    auto dmm = index_mmetric_adapter<mm_type, 1>(mm);
     auto lmm = lagrange_mmetric_adapter<mm_type, 2>(mm);
 
     path pc = dijkstra(g, cmm, src, dst);

@@ -4,8 +4,10 @@
 
 #include "topology.h"
 #include "weight.h"
-#include "metric.h"
-#include "algorithms.h"
+#include "weight-aggregate.h"
+#include "metric-basic.h"
+#include "metric-adapters.h"
+#include "algorithms-basic.h"
 
 template <int M>
 struct cost_multi_compare {
@@ -15,6 +17,44 @@ struct cost_multi_compare {
 };
 
 using dummy_multi_weight = multi_weight<double, 2, cost_multi_compare<2>>;
+
+adj_list_graph prepare_adj_lst() {
+    /* NOTE: this is missing 4-5 edge compared to adj matrix. */
+	std::deque<std::deque<node_id>> adjacency{
+		{ 1, 2, 5 },
+		{ 0, 2, 3 },
+		{ 0, 1, 3, 5 },
+		{ 1, 2, 4 },
+		{ 3 },
+		{ 0, 2 }
+	};
+	return adj_list_graph{ adjacency };
+}
+
+adj_list_graph prepare_full_adj_lst() {
+    auto result = prepare_adj_lst();
+    result.set2(5, 4);
+    return result;
+}
+
+adj_matrix_graph prepare_adj_mat() {
+    /* NOTE: this is missing 0-2 edge compared to adj list. */
+	std::deque<bool> matrix{
+		0, 1, 0, 0, 0, 1,
+		1, 0, 1, 1, 0, 0,
+		0, 1, 0, 1, 0, 1,
+		0, 1, 1, 0, 1, 0,
+		0, 0, 0, 1, 0, 1,
+		1, 0, 1, 0, 1, 0
+	};
+	return adj_matrix_graph{ begin(matrix), end(matrix) };
+}
+
+adj_matrix_graph prepare_full_adj_mat() {
+    auto result = prepare_adj_mat();
+    result.set2(0, 2);
+    return result;
+}
 
 map_metric<double, true> prepare_weight() {
 	map_metric<double, true> result;
@@ -44,32 +84,6 @@ map_metric<dummy_multi_weight, true> prepare_multi_weight() {
 	return result;
 }
 
-adj_list_graph prepare_adj_lst() {
-    /* NOTE: this is missing 4-5 edge compared to adj matrix. */
-	std::deque<std::deque<node_id>> adjacency{
-		{ 1, 2, 5 },
-		{ 0, 2, 3 },
-		{ 0, 1, 3, 5 },
-		{ 1, 2, 4 },
-		{ 3 },
-		{ 0, 2 }
-	};
-	return adj_list_graph{ adjacency };
-}
-
-adj_matrix_graph prepare_adj_mat() {
-    /* NOTE: this is missing 0-2 edge compared to adj list. */
-	std::deque<bool> matrix{
-		0, 1, 0, 0, 0, 1,
-		1, 0, 1, 1, 0, 0,
-		0, 1, 0, 1, 0, 1,
-		0, 1, 1, 0, 1, 0,
-		0, 0, 0, 1, 0, 1,
-		1, 0, 1, 0, 1, 0
-	};
-	return adj_matrix_graph{ begin(matrix), end(matrix) };
-}
-
 template <class MetricMap>
 void print(const path& p, const MetricMap& mm) {
     for (const auto& n : p) {
@@ -91,11 +105,8 @@ void single_weight_test() {
     std::cout << "Single weight test." << std::endl;
 
 	auto m = prepare_weight();
-	auto g1 = prepare_adj_lst();
-	auto g2 = prepare_adj_mat();
-
-    g1.set2(5, 4);
-    g2.set2(0, 2);
+	auto g1 = prepare_full_adj_lst();
+	auto g2 = prepare_full_adj_mat();
 
 	path pd1 = dijkstra(g1, m, 0, 4);
     print(pd1, m);
@@ -110,7 +121,8 @@ void single_weight_test() {
     print(pbf2, m);
     
 	bool result = all_equal(pd1, pd2, pbf1, pbf2);
-    std::cout << "All paths are " << (result ? "equal" : "not equal") << std::endl;
+    std::cout << "All paths are " << (result ? "equal" : "not equal") <<
+        std::endl << std::endl;
 }
 
 void multi_weight_test() {
@@ -119,11 +131,8 @@ void multi_weight_test() {
 
 	auto m = prepare_weight();
 
-	auto g1 = prepare_adj_lst();
-    g1.set2(5, 4);
-
-	auto g2 = prepare_adj_mat();
-    g2.set2(0, 2);
+	auto g1 = prepare_full_adj_lst();
+	auto g2 = prepare_full_adj_mat();
 
 	auto ms = prepare_multi_weight();
 	path pdm = dijkstra(g1, ms, 0, 4);
@@ -132,6 +141,43 @@ void multi_weight_test() {
 	tree t = prim(g2, m, 0);
 
     std::cout << std::endl;
+}
+
+void hop_metric_test() {
+
+    std::cout << "Hop-metric test." << std::endl;
+
+    auto g = prepare_full_adj_mat();
+
+    auto dm = prepare_weight();
+    hop_metric<double> hm;
+
+    path dp = dijkstra(g, dm, 0, 5);
+    path hp = dijkstra(g, hm, 0, 5);
+
+    std::cout << "Distance path = ";
+    print(dp, dm);
+    std::cout << "Hop path = ";
+    print(hp, hm);
+}
+
+void index_metric_test() {
+
+    std::cout << "Index metric test." << std::endl;
+
+	auto g = prepare_full_adj_mat();
+    auto m = prepare_multi_weight();
+
+    static_index_metric_adapter<decltype(m), 0> m0 { m };
+    static_index_metric_adapter<decltype(m), 1> m1 { m };
+
+    path p0 = dijkstra(g, m0, 0, 5);
+    path p1 = dijkstra(g, m1, 0, 5);
+
+    std::cout << "Path for metric 0 = ";
+    print(p0, m0);
+    std::cout << "Path for metric 1 = ";
+    print(p1, m1);
 }
 
 struct std_line : std::string {
@@ -154,6 +200,9 @@ void file_iteration() {
 int main() {
     single_weight_test();
     multi_weight_test();
+    hop_metric_test();
+    index_metric_test();
+
 	return 0;
 }
 
