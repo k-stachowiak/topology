@@ -159,6 +159,8 @@ void hop_metric_test() {
     print(dp, dm);
     std::cout << "Hop path = ";
     print(hp, hm);
+
+    std::cout << std::endl;
 }
 
 void index_metric_test() {
