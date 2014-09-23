@@ -3,111 +3,49 @@
 
 namespace detail {
 
-    template <typename Metric, typename Func, typename CFunc>
+    template <typename Metric>
     // Metric is based on the mutli_weight,
-    class aggregating_metric_adapter {
+    struct metric_aggregator {
 
-        Metric m_impl;
-        Func m_func;
-        CFunc m_cfunc;
-
-    public:
         typedef typename std::remove_const<
             typename std::remove_reference<
                 typename Metric::weight_type::value_type
             >::type
         >::type weight_type;
 
-        // Semiregular:
-        aggregating_metric_adapter() = default;
-        aggregating_metric_adapter(const aggregating_metric_adapter&) = default;
-        aggregating_metric_adapter& operator=(const aggregating_metric_adapter&) = default;
-
-        aggregating_metric_adapter(aggregating_metric_adapter&& x) :
-            m_impl { std::move(x.m_impl) },
-            m_func { x.m_func }
-            m_cfunc { x.m_cfunc }
-        {}
-
-        aggregating_metric_adapter& operator=(aggregating_metric_adapter&& x) {
-            m_impl = std::move(x.m_impl);
-            m_cfunc = x.m_cfunc;
-            return *this;
-        }
-
-        // Wrapping constructor:
-        aggregating_metric_adapter(const Metric& impl, Func func, CFunc cfunc) :
-            m_impl { impl },
-            m_func { func }
-            m_cfunc { cfunc }
-        {}
-
-        // Regular:
-        friend bool operator==(
-                const aggregating_metric_adapter& x,
-                const aggregating_metric_adapter& y) {
-            return x.m_impl == y.m_impl; // TODO: Compare only the i-th submetrics?
-        }
-
-        friend bool operator!=(
-                const aggregating_metric_adapter& x,
-                const aggregating_metric_adapter& y) {
-            return !(x == y);
-        }
-
         // Operations:
-        const weight_type operator()(node_id from, node_id to) const {
-            const auto& seq = m_impl(from, to).m_impl;
-            return m_cfunc(begin(seq), end(seq));
+		template <typename ConstFunc>
+		static const weight_type get_const(
+				const Metric& metric,
+				ConstFunc func,
+				node_id from,
+				node_id to) {
+            const auto& seq = metric(from, to).m_impl;
+            return func(begin(seq), end(seq));
         }
-        weight_type& operator()(node_id from, node_id to) {
-            const auto& seq = m_impl(from, to).m_impl;
-            return m_func(begin(seq), end(seq));
+
+		template <typename Func>
+        static weight_type& get(
+				Metric& metric,
+				Func func,
+				node_id from,
+				node_id to) {
+            const auto& seq = metric(from, to).m_impl;
+            return func(begin(seq), end(seq));
         }
     };
 
 }
 
 template <typename Metric>
-class index_metric_adapter {
+struct index_metric_adapter {
 
-    auto m_func = [](){};
-    auto m_cfunc = [](){};
+	int m_index;
+	Metric m_impl;
 
-    aggregating_metric_adapter<Metric, decltype(m_func), decltype(m_cfunc)> m_impl;
-
-    typedef m_impl::weight_type weight_type;
-
-    // Semiregular:
-    index_metric_adapter() = default;
-    index_metric_adapter(const index_metric_adapter&) = default;
-    index_metric_adapter& operator=(const index_metric_adapter&) = default;
-
-    index_metric_adapter(index_metric_adapter&& x) :
-        m_impl { std::move(x.m_impl) },
-        m_index { x.m_index }
-    {}
-
-    index_metric_adapter& operator=(index_metric_adapter&& x) {
-        m_impl = std::move(x.m_impl);
-        m_index = x.m_index;
-        return *this;
-    }
-}
-
-template <typename Metric>
-// Metric is based on the mutli_weight,
-class index_metric_adapter2 {
-
-    Metric m_impl;
-    int m_index;
-
-public:
-    typedef typename std::remove_const<
-        typename std::remove_reference<
-            typename Metric::weight_type::value_type
-        >::type
-    >::type weight_type;
+	typedef typename Metric::weight_type::iterator metric_iterator;
+	typedef typename Metric::weight_type::const_iterator metric_const_iterator;
+    typedef typename decltype(m_impl)::weight_type::value_type weight_type;
 
     // Semiregular:
     index_metric_adapter() = default;
@@ -125,15 +63,14 @@ public:
         return *this;
     }
 
-    // Wrapping constructor:
-    index_metric_adapter(const Metric& impl, int index) :
-        m_impl { impl },
-        m_index { index }
-    {}
+	index_metric_adapter(const Metric& impl, int index) :
+		m_index(index),
+		m_impl(impl)
+	{}
 
     // Regular:
 	friend bool operator==(const index_metric_adapter& x, const index_metric_adapter& y) {
-        return x.m_impl == y.m_impl; // TODO: Compare only the i-th submetrics?
+        return x.m_impl.m_impl == y.m_impl.m_impl; // TODO: Compare only the i-th submetrics?
 	}
 
 	friend bool operator!=(const index_metric_adapter& x, const index_metric_adapter& y) {
@@ -142,10 +79,17 @@ public:
 
 	// Operations:
     const weight_type operator()(node_id from, node_id to) const {
-		return m_impl(from, to).m_impl.at(m_index);
+		auto cfunc = [this](metric_const_iterator first, metric_const_iterator) -> const weight_type {
+			return *(first + m_index);
+		};
+		return detail::metric_aggregator<Metric>::get_const(m_impl, cfunc, from, to);
 	}
+
     weight_type& operator()(node_id from, node_id to) {
-		return m_impl(from, to).m_impl[m_index];
+		auto func = [this](metric_iterator first, metric_iterator) -> weight_type& {
+			return *(first + m_index);
+		};
+		return detail::metric_aggregator<Metric>::get(m_impl, func, from, to);
 	}
 };
 

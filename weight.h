@@ -47,6 +47,9 @@ struct multi_weight {
 
 	std::array<T, M> m_impl;
 
+	typedef typename decltype(m_impl)::iterator iterator;
+	typedef typename decltype(m_impl)::const_iterator const_iterator;
+
 	multi_weight(const std::array<T, M>& values) {
 		std::copy(begin(values), end(values), begin(m_impl));
 	}
