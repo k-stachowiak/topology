@@ -20,6 +20,10 @@ typename Metric::weight_type get_weight(const path& p, const Metric& m) {
     typename Metric::weight_type result = weight_limits<
         typename Metric::weight_type>::zero();
 
+    if (first == last)  {
+        return result;
+    }
+
     while (first + 1 != last) {
         auto next = first + 1;
         result = result + m(*first, *next);

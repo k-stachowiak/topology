@@ -5,9 +5,25 @@
 #include "topology.h"
 #include "weight.h"
 #include "weight-aggregate.h"
-#include "metric-basic.h"
-#include "metric-adapters.h"
+#include "metric.h"
 #include "algorithms-basic.h"
+
+/// The architecture:
+///
+/// Weights:
+/// Regular types for measuring the costs of edges, paths, etc.
+///
+/// Topologies:
+/// Types for storing pure topological information, e.g. the node adjacency, but
+/// not the edge weights.
+///
+/// Metrics:
+/// Functions from topologies to weights, i.e. means for evaluating
+/// the costs of the topological structures of different complexities.
+///
+/// Algorithms:
+/// Transformations between topologies; most commonly graph -> path or
+/// grahp -> tree.
 
 template <int M>
 struct cost_multi_compare {
