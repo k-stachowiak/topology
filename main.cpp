@@ -4,9 +4,12 @@
 
 #include "topology.h"
 #include "weight.h"
-#include "weight-aggregate.h"
 #include "metric.h"
 #include "algorithms-basic.h"
+
+// TODO:
+//
+// - node and edge iterators for topological sturctures.
 
 /// The architecture:
 ///
@@ -74,29 +77,29 @@ adj_matrix_graph prepare_full_adj_mat() {
 
 map_metric<double, true> prepare_weight() {
 	map_metric<double, true> result;
-	result(0, 1) = 7.0;
-	result(0, 2) = 9.0;
-	result(0, 5) = 14.0;
-	result(1, 2) = 10.0;
-	result(1, 3) = 15.0;
-	result(2, 3) = 11.0;
-	result(2, 5) = 2.0;
-	result(3, 4) = 6.0;
-	result(4, 5) = 9.0;
+	result(link(0, 1)) = 7.0;
+	result(link(0, 2)) = 9.0;
+	result(link(0, 5)) = 14.0;
+	result(link(1, 2)) = 10.0;
+	result(link(1, 3)) = 15.0;
+	result(link(2, 3)) = 11.0;
+	result(link(2, 5)) = 2.0;
+	result(link(3, 4)) = 6.0;
+	result(link(4, 5)) = 9.0;
 	return result;
 }
 
 map_metric<dummy_multi_weight, true> prepare_multi_weight() {
 	map_metric<dummy_multi_weight, true> result;
-	result(0, 1) = dummy_multi_weight{ { { 7.0, 70.0 } } };
-	result(0, 2) = dummy_multi_weight{ { { 9.0, 90.0 } } };
-	result(0, 5) = dummy_multi_weight{ { { 14.0, 140.0 } } };
-	result(1, 2) = dummy_multi_weight{ { { 10.0, 100.0 } } };
-	result(1, 3) = dummy_multi_weight{ { { 15.0, 150.0 } } };
-	result(2, 3) = dummy_multi_weight{ { { 11.0, 110.0 } } };
-	result(2, 5) = dummy_multi_weight{ { { 2.0, 20.0 } } };
-	result(3, 4) = dummy_multi_weight{ { { 6.0, 60.0 } } };
-	result(4, 5) = dummy_multi_weight{ { { 9.0, 90.0 } } };
+	result(link(0, 1)) = dummy_multi_weight{ 7.0, 70.0 };
+	result(link(0, 2)) = dummy_multi_weight{ 9.0, 90.0 };
+	result(link(0, 5)) = dummy_multi_weight{ 14.0, 140.0 };
+	result(link(1, 2)) = dummy_multi_weight{ 10.0, 100.0 };
+	result(link(1, 3)) = dummy_multi_weight{ 15.0, 150.0 };
+	result(link(2, 3)) = dummy_multi_weight{ 11.0, 110.0 };
+	result(link(2, 5)) = dummy_multi_weight{ 2.0, 20.0 };
+	result(link(3, 4)) = dummy_multi_weight{ 6.0, 60.0 };
+	result(link(4, 5)) = dummy_multi_weight{ 9.0, 90.0 };
 	return result;
 }
 
@@ -105,7 +108,13 @@ void print(const path& p, const MetricMap& mm) {
     for (const auto& n : p) {
         std::cout << n << ", ";
     }
-    std::cout << " -> " << get_weight(p, mm) << std::endl;
+    
+    auto cost = weight_limits<typename MetricMap::weight_type>::zero();
+    for_each_link(p, [&cost, &mm](const link& l) {
+        cost += mm(l);
+    });
+
+    std::cout << " -> " << cost << std::endl;
 }
 
 template <class MetricMap>
@@ -216,6 +225,7 @@ void file_iteration() {
 }
 
 int main() {
+
     single_weight_test();
     multi_weight_test();
     hop_metric_test();

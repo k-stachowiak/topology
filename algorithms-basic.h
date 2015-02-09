@@ -9,6 +9,7 @@
 #include "config.h"
 
 // Fundamental algorithms.
+// =======================
 
 template<typename T>
 bool all_equal(const T& x, const T& y) {
@@ -20,7 +21,9 @@ bool all_equal(const T& x, const T& y, const Tail&... tail) {
 	return (x == y) && all_equal(y, tail...);
 }
 
-// Path building algorithm.
+// Topological structure building algorithms.
+// ==========================================
+
 template <class PredMap>
 path build_path(node_id src, node_id dst, const PredMap& pm) {
 	path result;
@@ -33,11 +36,10 @@ path build_path(node_id src, node_id dst, const PredMap& pm) {
 	return result;
 }
 
-// Tree building algorithm.
 template <class PredMap>
 tree build_tree(const PredMap& pm) {
 	tree result;
-	for (size_t i = 0; i < pm.size(); ++i) {
+	for (size_t i = 0; i < pm.size(); ++i) { // TODO: Get rid of these incorrect size_t for interation
 		node_id u = pm[i], v = i;
 		if (u == v) {
 			continue;
@@ -47,24 +49,36 @@ tree build_tree(const PredMap& pm) {
 	return result;
 }
 
-// Path and tree finding algoritms.
+// Tological optimization algorithms.
+// ==================================
 
-// Implementation details.
 namespace detail {
+
+    // Stop conditions for the Dijkstra's algorithm implementation.
+    // ------------------------------------------------------------
 
 	struct dst_stop {
 		node_id dst;
-		bool operator()(node_id u) {
-			return u == dst;
-		}
+		bool operator()(node_id u) { return u == dst; }
 	};
 
 	struct never_stop {
-		bool operator()(node_id) {
-			return false;
-		}
+		bool operator()(node_id) { return false; }
 	};
 
+    /// Dijkstra's algorithm raw implementation.
+    ///
+    /// @tparam Graph A Topology,
+    /// @tparam Metric A Metric,
+    /// @tparam Stop A functor defining the stop condition for the algorithm.
+    ///
+    /// @param g The graph,
+    /// @param m The metric,
+    /// @param stop The stop condition functor,
+    /// @param src The source for the relaxation,
+    /// @param out_preds The out parameter returning the predecessors' map,
+    /// @param out_dists The out parameter returning the distances' map.
+    ///
 	template <class Graph, class Metric, typename Stop>
 	void dijkstra_relax(
 			const Graph& g, const Metric& m,
@@ -83,8 +97,12 @@ namespace detail {
 
 		while (!open.empty()) {
 
-			auto it = std::min_element(begin(open), end(open),
-				[&out_dists](node_id x, node_id y){ return out_dists[x] < out_dists[y]; });
+			auto it = std::min_element(
+                begin(open),
+                end(open),
+				[&out_dists](node_id x, node_id y) {
+                    return out_dists[x] < out_dists[y];
+                });
 
 			node_id u = *it;
 			if (stop(u)) {
@@ -92,20 +110,31 @@ namespace detail {
 			}
 
             std::for_each(
-                    g.out_begin(u), g.out_end(u),
-                    [u, &out_dists, &out_preds, &m, &open](node_id v) mutable {
-				typename Metric::weight_type new_dist = out_dists[u] + m(u, v);
-				if (new_dist < out_dists[v]) {
-					out_dists[v] = new_dist;
-					out_preds[v] = u;
-					open.insert(v);
-				}
-			});
+                g.out_begin(u),
+                g.out_end(u),
+                [u, &out_dists, &out_preds, &m, &open](node_id v) mutable {
+                    typename Metric::weight_type new_dist = out_dists[u] + m(link(u, v));
+                    if (new_dist < out_dists[v]) {
+                        out_dists[v] = new_dist;
+                        out_preds[v] = u;
+                        open.insert(v);
+                    }
+                });
 
 			open.erase(u);
 		}
 	}
 
+    /// The Bellman-Ford relaxation raw implementation.
+    ///
+    /// @tparam Graph A Topology,
+    /// @tparam Metric A Metric,
+    ///
+    /// @param g The graph,
+    /// @param m The metric,
+    /// @param src The source of the relaxation,
+    /// @param out_preds The out parameter returning the predecessors' map,
+    /// @param out_dists The out parameter returning the distances' map.
 	template <class Graph, class Metric>
 	void bellman_ford_relax(
 			const Graph& g, const Metric& m,
@@ -122,7 +151,7 @@ namespace detail {
 
 		for (node_id i = 0; i < (N - 1); ++i) {
 			for_each_edge(g, [&out_dists, &out_preds, &m](node_id u, node_id v) {
-				typename Metric::weight_type new_dist = out_dists[u] + m(u, v);
+				typename Metric::weight_type new_dist = out_dists[u] + m(link(u, v));
 				if (out_dists[v] > new_dist) {
 					out_dists[v] = new_dist;
 					out_preds[v] = u;
@@ -133,7 +162,9 @@ namespace detail {
 
 }
 
-// Dijkstra's algorithm.
+// The convenient API for the topological optimization algorithms.
+// ===============================================================
+
 template <class Graph, class Metric>
 path dijkstra(const Graph& g, const Metric& m, node_id src, node_id dst) {
 	std::vector<node_id> preds;
@@ -142,7 +173,6 @@ path dijkstra(const Graph& g, const Metric& m, node_id src, node_id dst) {
 	return build_path(src, dst, preds);
 }
 
-// Prim's algorithm.
 template <class Graph, class Metric>
 tree prim(const Graph& g, const Metric& m, node_id src) {
 	std::vector<node_id> preds;
@@ -151,7 +181,6 @@ tree prim(const Graph& g, const Metric& m, node_id src) {
 	return build_tree(preds);
 }
 
-// Bellman-Ford algorithm.
 template <class Graph, class Metric>
 path bellman_ford(const Graph& g, const Metric& m, node_id src, node_id dst) {
 	std::vector<node_id> preds;

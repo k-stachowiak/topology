@@ -23,6 +23,25 @@ struct pair_second {
 
 using path = std::deque<node_id>;
 
+template <class F>
+void for_each_link(const path &p, F f)
+{
+    auto first = begin(p);
+    auto next = first;
+    auto last = end(p);
+
+    if (first == last) {
+        return;
+    }
+
+    ++next;
+    while (next != last) {
+        f(link(*first, *next));
+        ++first;
+        ++next;
+    }
+}
+
 // concept Tree t
 //
 // operations:

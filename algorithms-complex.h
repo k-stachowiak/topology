@@ -11,36 +11,35 @@ path larac(const Graph& g,
 
     static_index_metric_adapter<decltype(mm), 0> cm { mm };
     static_index_metric_adapter<decltype(mm), 1> dm { mm };
+    auto lm = lagrange_mmetric_adapter<mm_type, 2>(mm);
 
-    auto lmm = lagrange_mmetric_adapter<mm_type, 2>(mm);
-
-    path pc = dijkstra(g, cmm, src, dst);
-    T dpc = get_metric(dmm, pc);
+    path pc = dijkstra(g, cm, src, dst);
+    T dpc = get_metric(dm, pc);
     if (dpc <= constraint) {
         return pc;
     }
 
-    path pd = dijkstra(g, dmm, src, dst);
-    T dpd = get_metric(dmm, pd);
-    if (get_metric(dmm, pd) > constraint) {
+    path pd = dijkstra(g, dm, src, dst);
+    T dpd = get_metric(dm, pd);
+    if (get_metric(dm, pd) > constraint) {
         return {};
     }
 
-    T cpc = get_metric(cmm, pc);
-    T cpd = get_metric(cmm, pd);
-    while (get_metric(cmm, pc) != get_metric(cmm, pd)) {
+    T cpc = get_metric(cm, pc);
+    T cpd = get_metric(cm, pd);
+    while (get_metric(cm, pc) != get_metric(cm, pd)) {
 
         T lambda = (cpc - cpd) / (dpd - dpc);
-        path new_p = dijkstra(g, lmm, src, dst);
+        path new_p = dijkstra(g, lm, src, dst);
 
-        if (get_metric(dmm, new_p) > constraint) {
+        if (get_metric(dm, new_p) > constraint) {
             pc = new_p;
-            cpc = get_metric(cmm, pc);
-            dpc = get_metric(dmm, pc);
+            cpc = get_metric(cm, pc);
+            dpc = get_metric(dm, pc);
         } else {
             pd = new_p;
-            cpd = get_metric(cmm, pd);
-            dpd = get_metric(dmm, pd);
+            cpd = get_metric(cm, pd);
+            dpd = get_metric(dm, pd);
         }
     }
 
