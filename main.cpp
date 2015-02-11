@@ -9,6 +9,9 @@
 #include "metric-adapters.h"
 #include "algorithms-basic.h"
 
+// todo: split map_weight into directed map_weight = map<pair<node, node>> and undirected - half of the current impl.
+// todo: rephrase the weight as an additive, ordered monoid.
+
 template <int M>
 struct cost_multi_compare {
 	bool operator()(const std::array<double, M>& x, const std::array<double, M>& y) {
