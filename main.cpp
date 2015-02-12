@@ -7,9 +7,11 @@
 #include "metric.h"
 #include "algorithms-basic.h"
 
+void test();
+
 // TODO:
-//
-// - node and edge iterators for topological sturctures.
+// * add optional begin(.) and end(.) iterators to the weight concept.
+// * node and edge iterators for topological sturctures.
 
 /// The architecture:
 ///
@@ -28,18 +30,12 @@
 /// Transformations between topologies; most commonly graph -> path or
 /// grahp -> tree.
 
-template <int M>
-struct cost_multi_compare {
-	bool operator()(const std::array<double, M>& x, const std::array<double, M>& y) {
-		return x[0] < y[0];
-	}
-};
+using dummy_multi_weight = multi_weight<double, 2, cost_multi_compare<double, 2>>;
 
-using dummy_multi_weight = multi_weight<double, 2, cost_multi_compare<2>>;
-
-adj_list_graph prepare_adj_lst() {
+adj_list_graph prepare_adj_lst()
+{
     /* NOTE: this is missing 4-5 edge compared to adj matrix. */
-	std::deque<std::deque<node_id>> adjacency{
+	std::deque<std::deque<node>> adjacency{
 		{ 1, 2, 5 },
 		{ 0, 2, 3 },
 		{ 0, 1, 3, 5 },
@@ -50,13 +46,15 @@ adj_list_graph prepare_adj_lst() {
 	return adj_list_graph{ adjacency };
 }
 
-adj_list_graph prepare_full_adj_lst() {
+adj_list_graph prepare_full_adj_lst()
+{
     auto result = prepare_adj_lst();
     result.set2(5, 4);
     return result;
 }
 
-adj_matrix_graph prepare_adj_mat() {
+adj_matrix_graph prepare_adj_mat()
+{
     /* NOTE: this is missing 0-2 edge compared to adj list. */
 	std::deque<bool> matrix{
 		0, 1, 0, 0, 0, 1,
@@ -69,64 +67,69 @@ adj_matrix_graph prepare_adj_mat() {
 	return adj_matrix_graph{ begin(matrix), end(matrix) };
 }
 
-adj_matrix_graph prepare_full_adj_mat() {
+adj_matrix_graph prepare_full_adj_mat()
+{
     auto result = prepare_adj_mat();
     result.set2(0, 2);
     return result;
 }
 
-map_metric<double, true> prepare_weight() {
+map_metric<double, true> prepare_weight()
+{
 	map_metric<double, true> result;
-	result(link(0, 1)) = 7.0;
-	result(link(0, 2)) = 9.0;
-	result(link(0, 5)) = 14.0;
-	result(link(1, 2)) = 10.0;
-	result(link(1, 3)) = 15.0;
-	result(link(2, 3)) = 11.0;
-	result(link(2, 5)) = 2.0;
-	result(link(3, 4)) = 6.0;
-	result(link(4, 5)) = 9.0;
+	result(edge { 0, 1 }) = 7.0;
+	result(edge { 0, 2 }) = 9.0;
+	result(edge { 0, 5 }) = 14.0;
+	result(edge { 1, 2 }) = 10.0;
+	result(edge { 1, 3 }) = 15.0;
+	result(edge { 2, 3 }) = 11.0;
+	result(edge { 2, 5 }) = 2.0;
+	result(edge { 3, 4 }) = 6.0;
+	result(edge { 4, 5 }) = 9.0;
 	return result;
 }
 
-map_metric<dummy_multi_weight, true> prepare_multi_weight() {
+map_metric<dummy_multi_weight, true> prepare_multi_weight()
+{
 	map_metric<dummy_multi_weight, true> result;
-	result(link(0, 1)) = dummy_multi_weight{ 7.0, 70.0 };
-	result(link(0, 2)) = dummy_multi_weight{ 9.0, 90.0 };
-	result(link(0, 5)) = dummy_multi_weight{ 14.0, 140.0 };
-	result(link(1, 2)) = dummy_multi_weight{ 10.0, 100.0 };
-	result(link(1, 3)) = dummy_multi_weight{ 15.0, 150.0 };
-	result(link(2, 3)) = dummy_multi_weight{ 11.0, 110.0 };
-	result(link(2, 5)) = dummy_multi_weight{ 2.0, 20.0 };
-	result(link(3, 4)) = dummy_multi_weight{ 6.0, 60.0 };
-	result(link(4, 5)) = dummy_multi_weight{ 9.0, 90.0 };
+	result(edge { 0, 1 }) = dummy_multi_weight{ 7.0, 70.0 };
+	result(edge { 0, 2 }) = dummy_multi_weight{ 9.0, 90.0 };
+	result(edge { 0, 5 }) = dummy_multi_weight{ 14.0, 140.0 };
+	result(edge { 1, 2 }) = dummy_multi_weight{ 10.0, 100.0 };
+	result(edge { 1, 3 }) = dummy_multi_weight{ 15.0, 150.0 };
+	result(edge { 2, 3 }) = dummy_multi_weight{ 11.0, 110.0 };
+	result(edge { 2, 5 }) = dummy_multi_weight{ 2.0, 20.0 };
+	result(edge { 3, 4 }) = dummy_multi_weight{ 6.0, 60.0 };
+	result(edge { 4, 5 }) = dummy_multi_weight{ 9.0, 90.0 };
 	return result;
 }
 
 template <class MetricMap>
-void print(const path& p, const MetricMap& mm) {
+void print(const path& p, const MetricMap& mm)
+{
     for (const auto& n : p) {
         std::cout << n << ", ";
     }
     
     auto cost = weight_limits<typename MetricMap::weight_type>::zero();
-    for_each_link(p, [&cost, &mm](const link& l) {
-        cost += mm(l);
+    for_each_edge(p, [&cost, &mm](const edge& e) { // TODO: implement node and edge iterators for topological structures.
+        cost += mm(e);
     });
 
     std::cout << " -> " << cost << std::endl;
 }
 
 template <class MetricMap>
-void print(const tree& t, const MetricMap& mm) {
-	for_each_edge(t, [](node_id u, node_id v) {
+void print(const tree& t, const MetricMap& mm)
+{
+	for_each_edge(t, [](node u, node v) {
         std::cout << u << " - " << v << " -> ";
 	});
     std::cout << std::endl;
 }
 
-void single_weight_test() {
-
+void single_weight_test()
+{
     std::cout << "Single weight test." << std::endl;
 
 	auto m = prepare_weight();
@@ -150,8 +153,8 @@ void single_weight_test() {
         std::endl << std::endl;
 }
 
-void multi_weight_test() {
-
+void multi_weight_test()
+{
     std::cout << "Multi weight test." << std::endl;
 
 	auto m = prepare_weight();
@@ -168,8 +171,8 @@ void multi_weight_test() {
     std::cout << std::endl;
 }
 
-void hop_metric_test() {
-
+void hop_metric_test()
+{
     std::cout << "Hop-metric test." << std::endl;
 
     auto g = prepare_full_adj_mat();
@@ -188,15 +191,15 @@ void hop_metric_test() {
     std::cout << std::endl;
 }
 
-void index_metric_test() {
-
+void index_metric_test()
+{
     std::cout << "Index metric test." << std::endl;
 
 	auto g = prepare_full_adj_mat();
     auto m = prepare_multi_weight();
 
-    index_metric_adapter<decltype(m)> m0 { m, 0 };
-    index_metric_adapter<decltype(m)> m1 { m, 1 };
+    index_metric_adapter<decltype(m)> m0 { &m, 0 };
+    index_metric_adapter<decltype(m)> m1 { &m, 1 };
 
     path p0 = dijkstra(g, m0, 0, 5);
     path p1 = dijkstra(g, m1, 0, 5);
@@ -213,7 +216,8 @@ struct std_line : std::string {
     }
 };
 
-void file_iteration() {
+void file_iteration()
+{
     std::ifstream in { "graph" };
 
     std::istream_iterator<std_line> first(in);
@@ -224,13 +228,9 @@ void file_iteration() {
     std::copy(first, last, out);
 }
 
-int main() {
-
-    single_weight_test();
-    multi_weight_test();
-    hop_metric_test();
-    index_metric_test();
-
+int main()
+{
+    test();
 	return 0;
 }
 

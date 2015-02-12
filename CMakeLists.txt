@@ -5,4 +5,4 @@ project(topology)
 set(CMAKE_CXX_COMPILER "g++")
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror -g -O0")
 
-add_executable(top main.cpp)
+add_executable(top main.cpp test.cpp)

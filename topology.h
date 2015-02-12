@@ -21,10 +21,10 @@ struct pair_second {
 //
 // Implemented entirely in terms of a double ended queue.
 
-using path = std::deque<node_id>;
+using path = std::deque<node>;
 
 template <class F>
-void for_each_link(const path &p, F f)
+void for_each_edge(const path &p, F f)
 {
     auto first = begin(p);
     auto next = first;
@@ -36,7 +36,7 @@ void for_each_link(const path &p, F f)
 
     ++next;
     while (next != last) {
-        f(link(*first, *next));
+        f(edge(*first, *next));
         ++first;
         ++next;
     }
@@ -52,7 +52,7 @@ void for_each_link(const path &p, F f)
 
 struct tree {
 
-	std::multimap<node_id, node_id> m_impl;
+	std::multimap<node, node> m_impl;
 
 	// Semiregular: by default
 	// Regular:
@@ -65,20 +65,20 @@ struct tree {
 	}
 
 	// Operations:
-	void add(node_id from, node_id to) {
+	void add(node from, node to) {
 		m_impl.insert(std::make_pair(from, to));
 	}
 
-	void add2(node_id from, node_id to) {
+	void add2(node from, node to) {
 		add(from, to);
 		add(to, from);
 	}
 
-    std::multimap<node_id, node_id>::const_iterator out_begin(node_id x) const {
+    std::multimap<node, node>::const_iterator out_begin(node x) const {
         return m_impl.equal_range(x).first;
     }
 
-    std::multimap<node_id, node_id>::const_iterator out_end(node_id x) const {
+    std::multimap<node, node>::const_iterator out_end(node x) const {
         return m_impl.equal_range(x).second;
     }
 
@@ -103,7 +103,7 @@ struct adj_list_graph {
 
 	// This is an adjacency list implementation of the Graph concept.
 
-	std::deque<std::deque<node_id>> adjacency;
+	std::deque<std::deque<node>> adjacency;
 
 	// Semiregular: by default
 	// Regular:
@@ -116,22 +116,22 @@ struct adj_list_graph {
 	}
 
 	// Operations:
-    std::deque<node_id>::const_iterator out_begin(node_id x) const {
+    std::deque<node>::const_iterator out_begin(node x) const {
         return adjacency[x].begin();
     }
 
-    std::deque<node_id>::const_iterator out_end(node_id x) const {
+    std::deque<node>::const_iterator out_end(node x) const {
         return adjacency[x].end();
     }
 
-    void set(node_id from, node_id to) {
-        if (from >= static_cast<node_id>(adjacency.size())) {
+    void set(node from, node to) {
+        if (from >= static_cast<node>(adjacency.size())) {
             adjacency.resize(from + 1);
         }
         adjacency[from].push_back(to);
     }
 
-    void set2(node_id from, node_id to) {
+    void set2(node from, node to) {
         set(from, to);
         set(to, from);
     }
@@ -144,7 +144,7 @@ struct adj_list_graph {
 	friend void for_each_edge(const adj_list_graph& g, Func f) {
 		size_t N = nodes_count(g);
 		for (size_t u = 0; u < N; ++u) {
-			for (node_id v : g.adjacency.at(u)) {
+			for (node v : g.adjacency.at(u)) {
 				f(u, v);
 			}
 		}
@@ -193,11 +193,11 @@ struct adj_matrix_graph {
 	}
 
 	// Operations:
-    out_iterator out_begin(node_id u) const;
-    out_iterator out_end(node_id u) const;
+    out_iterator out_begin(node u) const;
+    out_iterator out_end(node u) const;
 
-	std::deque<node_id> operator()(node_id u) const {
-		std::deque<node_id> result;
+	std::deque<node> operator()(node u) const {
+		std::deque<node> result;
 		auto first = begin(matrix) + u * nodes;
 		auto last = first + nodes;
 		for (auto current = first; current != last; ++current) {
@@ -208,9 +208,9 @@ struct adj_matrix_graph {
 		return result;
 	}
 
-    void set(node_id from, node_id to) {
+    void set(node from, node to) {
 
-        if (static_cast<node_id>(matrix.size()) > (from * from)) {
+        if (static_cast<node>(matrix.size()) > (from * from)) {
             matrix[nodes * from + to] = true;
             return;
         }
@@ -230,7 +230,7 @@ struct adj_matrix_graph {
         matrix = std::move(new_matrix);
     }
 
-    void set2(node_id from, node_id to) {
+    void set2(node from, node to) {
         set(from, to);
         set(to, from);
     }
@@ -255,7 +255,7 @@ struct adj_matrix_graph {
 // Implementation of an outgoing iterator for an adjacency matrix.
 // It will traverse an adjacency matrix row, skipping false entries.
 struct adj_matrix_graph::out_iterator :
-        std::iterator<std::forward_iterator_tag, node_id> {
+        std::iterator<std::forward_iterator_tag, node> {
 
     typedef std::deque<bool>::const_iterator impl_type;
 
@@ -292,12 +292,12 @@ struct adj_matrix_graph::out_iterator :
         return copy;
     }
 
-    node_id operator*() const {
+    node operator*() const {
         return std::distance(first, current);
     }
 };
 
-adj_matrix_graph::out_iterator adj_matrix_graph::out_begin(node_id u) const {
+adj_matrix_graph::out_iterator adj_matrix_graph::out_begin(node u) const {
 
     auto first = begin(matrix) + u * nodes;
     auto last = first + nodes;
@@ -309,7 +309,7 @@ adj_matrix_graph::out_iterator adj_matrix_graph::out_begin(node_id u) const {
     return result;
 }
 
-adj_matrix_graph::out_iterator adj_matrix_graph::out_end(node_id u) const {
+adj_matrix_graph::out_iterator adj_matrix_graph::out_end(node u) const {
     auto last = begin(matrix) + u * nodes + nodes;
     return out_iterator { last, last };
 }

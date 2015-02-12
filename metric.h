@@ -25,12 +25,12 @@ struct hop_metric {
 	friend bool operator!=(const hop_metric& x, const hop_metric& y) { return !(x == y); }
 
 	// Operations:
-	weight_type operator()(const link&) const {
+	weight_type operator()(const edge&) const {
 		return weight_limits<Weight>::one();
 	}
 };
 
-/// Metric that enables assigning particular weights to particular links.
+/// Metric that enables assigning particular weights to particular edges.
 ///
 /// @tparam Weight An underlying Wieght.
 /// @bidirectional A flag indicating if the map lookup should be uni- or bi- directional.
@@ -38,8 +38,11 @@ struct hop_metric {
 template <class Weight, bool bidirectional = false>
 class map_metric {
 
+    // Helper definition of the edge normalization operation.
+    static edge normalize(const edge& e) { return std::minmax(e.first, e.second); }
+
     // Implementation
-	std::map<link, Weight> m_impl;
+	std::map<edge, Weight> m_impl;
 
 public:
 	typedef Weight weight_type;
@@ -47,119 +50,112 @@ public:
 	// Semiregular: by default.
 
 	// Regular:
-	friend bool operator==(const map_metric& x, const map_metric& y) { return x.m_impl == y.m_impl; }
+	friend bool operator==(const map_metric& x, const map_metric& y)
+    {
+        // In any case implementation equality means the metric equality.
+        if (x.m_impl == y.m_impl) {
+            return true;
+        }
+
+        // If not bidirectional then the equality is only given
+        // by the implementation equality.
+        if (!bidirectional) {
+            return false;
+        }
+
+        for (const auto& pr : x.m_impl) {
+
+            // Match straight.
+            auto found1 = y.m_impl.find(pr.first);
+            if (found1 != end(y.m_impl) && pr.second == found1->second) {
+                continue;
+            }
+
+            // Match reverse
+            node from = pr.first.first;
+            node to = pr.first.second;
+            auto found2 = y.m_impl.find(edge(to, from));
+            if (found2 == end(y.m_impl) || pr.second != found2->second) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 	friend bool operator!=(const map_metric& x, const map_metric& y) { return !(x == y); }
 
 	// Operations:
-	const weight_type operator()(const link& l) const {
-
-		if (!bidirectional) {
-			return m_impl.at(l);
-		}
-
-		auto it = m_impl.find(l);
-		if (it != end(m_impl)) {
-			return it->second;
-		} else {
-			return m_impl.at(l);
-		}
+	const weight_type& operator()(const edge& e) const
+    {
+        return bidirectional
+            ? m_impl.at(normalize(e))
+            : m_impl.at(e);
 	}
 
-	weight_type& operator()(const link &l) {
-
-		if (!bidirectional) {
-			return m_impl[l];
-		}
-
-		auto it = m_impl.find(l);
-		if (it != end(m_impl)) {
-			return it->second;
-		} else {
-			return m_impl[l];
-		}
+	weight_type& operator()(const edge &e)
+    {
+        return bidirectional
+            ? m_impl[normalize(e)]
+            : m_impl[e];
 	}
 };
 
-namespace detail {
-
-    template <typename Metric>
-    // Metric is based on the mutli_weight,
-    struct metric_aggregator {
-
-        typedef typename std::remove_const<
-            typename std::remove_reference<
-                typename Metric::weight_type::value_type
-            >::type
-        >::type weight_type;
-
-        // Operations:
-		template <typename ConstFunc>
-		static const weight_type get_const(const Metric& metric, ConstFunc func, const link& l) {
-            const auto& seq = metric(l).m_impl;
-            return func(begin(seq), end(seq));
-        }
-
-		template <typename Func>
-        static weight_type& get(Metric& metric, Func func, const link& l) {
-            const auto& seq = metric(l).m_impl;
-            return func(begin(seq), end(seq));
-        }
-    };
-
-}
-
+/// Metric that allows to only take into account a certain index of the multi-meteic.
+///
+/// @tparam Metric A Metric based on a MultiWeight type.
 template <typename Metric>
 struct index_metric_adapter {
 
 	int m_index;
-	Metric m_impl;
+	Metric* m_impl;
 
 	typedef typename Metric::weight_type::iterator metric_iterator;
 	typedef typename Metric::weight_type::const_iterator metric_const_iterator;
-    typedef typename decltype(m_impl)::weight_type::value_type weight_type;
+    typedef typename Metric::weight_type::value_type weight_type;
 
     // Semiregular:
     index_metric_adapter() = default;
     index_metric_adapter(const index_metric_adapter&) = default;
     index_metric_adapter& operator=(const index_metric_adapter&) = default;
-index_metric_adapter(index_metric_adapter&& x) :
+    index_metric_adapter(index_metric_adapter&& x) :
         m_impl { std::move(x.m_impl) },
         m_index { x.m_index }
     {}
 
-    index_metric_adapter& operator=(index_metric_adapter&& x) {
+    index_metric_adapter& operator=(index_metric_adapter&& x)
+    {
         m_impl = std::move(x.m_impl);
         m_index = x.m_index;
         return *this;
     }
 
-	index_metric_adapter(const Metric& impl, int index) :
+	index_metric_adapter(Metric* impl, int index) :
 		m_index(index),
 		m_impl(impl)
 	{}
 
     // Regular:
-	friend bool operator==(const index_metric_adapter& x, const index_metric_adapter& y) {
-        return x.m_impl.m_impl == y.m_impl.m_impl; // TODO: Compare only the i-th submetrics?
+	friend bool operator==(const index_metric_adapter& x, const index_metric_adapter& y)
+    {
+        return x.m_impl->m_impl == y.m_impl->m_impl;
 	}
 
-	friend bool operator!=(const index_metric_adapter& x, const index_metric_adapter& y) {
+	friend bool operator!=(const index_metric_adapter& x, const index_metric_adapter& y)
+    {
 		return !(x == y);
 	}
 
 	// Operations:
-    const weight_type operator()(const link &l) const {
-		auto cfunc = [this](metric_const_iterator first, metric_const_iterator) -> const weight_type {
-			return *(first + m_index);
-		};
-		return detail::metric_aggregator<Metric>::get_const(m_impl, cfunc, l);
+    weight_type operator()(const edge &e) const
+    {
+        const auto w = (*m_impl)(e);
+        return *(w.begin() + m_index);
 	}
 
-    weight_type& operator()(const link &l) {
-		auto func = [this](metric_iterator first, metric_iterator) -> weight_type& {
-			return *(first + m_index);
-		};
-		return detail::metric_aggregator<Metric>::get(m_impl, func, l);
+    weight_type operator()(const edge &e)
+    {
+        return static_cast<const index_metric_adapter&>(*this)(e);
 	}
 };
 

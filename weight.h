@@ -16,16 +16,38 @@
 concept Weight : Regular, TotallyOrdered {
     Weight operator+(Weight, Weight);
 };
-// NOTE: All numeric built-in types are Weight.
+// NOTE: All numeric built-in types are (Weight)s.
+
+concept MultiWeight : Weight {
+    ForwardIterator<Weight> begin();
+    ForwardIterator<Weight> end();
+};
 #endif
+
+/// Comparison functor for multi_weight that will only compare the I-th weights.
+///
+/// @tparam T Elementary weight type,
+/// @tparam M Number of weights in type,
+/// @tparam I The index of the weights to compare.
+///
+template <class T, int M, int I>
+struct index_multi_compare {
+	bool operator()(const std::array<T, M>& x, const std::array<T, M>& y) {
+		return x[I] < y[I];
+	}
+};
+
+/// Shourcut for comparison functor that will only compare 0-th weight in multi_weight.
+template <class T, int M>
+using cost_multi_compare = index_multi_compare<T, M, 0>;
 
 /// Array of weights.
 ///
 /// @tparam T Type of the Weight concept
-/// @tparam M Natural number indicating the count of the aggregated weights
+/// @tparam M Natural (positive) number indicating the count of the aggregated weights
 /// @tparam Cmp Comparison functor defining the total ordering of this type.
 ///
-template <typename T, int M, typename Cmp = std::less<T>>
+template <typename T, int M, typename Cmp = cost_multi_compare<T, M>>
 struct multi_weight {
 
     // Helper typedefs.
@@ -42,7 +64,7 @@ struct multi_weight {
 
     // Enable initialization from explicit input.
 	multi_weight(std::initializer_list<T> l) {
-		std::copy(begin(l), end(l), begin(m_impl));
+		std::copy(l.begin(), l.end(), m_impl.begin());
         assert(l.size() == M);
     }
 
@@ -63,7 +85,7 @@ struct multi_weight {
 	}
 
 	// Regular:
-	friend bool operator==(const multi_weight& x, const multi_weight& y) { return x == y; }
+	friend bool operator==(const multi_weight& x, const multi_weight& y) { return x.m_impl == y.m_impl; }
 	friend bool operator!=(const multi_weight& x, const multi_weight& y) { return !(x == y); }
 
 	// Totally ordered:
@@ -72,16 +94,22 @@ struct multi_weight {
 		return cmp(x.m_impl, y.m_impl);
 	}
 	friend bool operator>(const multi_weight& x, const multi_weight& y) { return y < x; }
-	friend bool operator<=(const multi_weight& x, const multi_weight& y) { return !(y > x); }
-	friend bool operator>=(const multi_weight& x, const multi_weight& y) { return !(y < x); }
+	friend bool operator<=(const multi_weight& x, const multi_weight& y) { return !(y < x); }
+	friend bool operator>=(const multi_weight& x, const multi_weight& y) { return !(x < y); }
 
-	// Weight concept operations:
+	// Weight operations:
 	friend multi_weight operator+(multi_weight x, const multi_weight& y) {
 		for (size_t i = 0; i < x.m_impl.size(); ++i) {
 			x.m_impl[i] += y.m_impl[i];
 		}
 		return x;
 	}
+
+    // MultiWeight operations:
+    iterator begin() { return m_impl.begin(); }
+    const_iterator begin() const { return m_impl.begin(); }
+    iterator end() { return m_impl.end(); }
+    const_iterator end() const { return m_impl.end(); }
 };
 
 #if 0
@@ -119,7 +147,7 @@ struct weight_limits<multi_weight<T, M, Cmp>> {
 		result.m_impl.fill(0);
 		return result;
 	}
-	static T one() {
+	static multi_weight<T, M, Cmp> one() {
 		multi_weight<T, M, Cmp> result;
 		result.m_impl.fill(1);
 		return result;

@@ -2,9 +2,8 @@
 #define CONFIG_H
 
 #include <utility>
-#include <deque>
 
-using node_id = long;
-using link = std::pair<node_id, node_id>;
+using node = int;
+using edge = std::pair<node, node>;
 
 #endif

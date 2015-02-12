@@ -25,9 +25,9 @@ bool all_equal(const T& x, const T& y, const Tail&... tail) {
 // ==========================================
 
 template <class PredMap>
-path build_path(node_id src, node_id dst, const PredMap& pm) {
+path build_path(node src, node dst, const PredMap& pm) {
 	path result;
-	node_id u = dst;
+	node u = dst;
 	while (u != src) {
 		result.push_front(u);
 		u = pm[u];
@@ -40,7 +40,7 @@ template <class PredMap>
 tree build_tree(const PredMap& pm) {
 	tree result;
 	for (size_t i = 0; i < pm.size(); ++i) { // TODO: Get rid of these incorrect size_t for interation
-		node_id u = pm[i], v = i;
+		node u = pm[i], v = i;
 		if (u == v) {
 			continue;
 		}
@@ -58,12 +58,12 @@ namespace detail {
     // ------------------------------------------------------------
 
 	struct dst_stop {
-		node_id dst;
-		bool operator()(node_id u) { return u == dst; }
+		node dst;
+		bool operator()(node u) { return u == dst; }
 	};
 
 	struct never_stop {
-		bool operator()(node_id) { return false; }
+		bool operator()(node) { return false; }
 	};
 
     /// Dijkstra's algorithm raw implementation.
@@ -82,12 +82,12 @@ namespace detail {
 	template <class Graph, class Metric, typename Stop>
 	void dijkstra_relax(
 			const Graph& g, const Metric& m,
-			Stop stop, node_id src,
-			std::vector<node_id>& out_preds,
+			Stop stop, node src,
+			std::vector<node>& out_preds,
 			std::vector<typename Metric::weight_type>& out_dists) {
 
-		node_id N = static_cast<node_id>(nodes_count(g));
-		std::set<node_id> open;
+		node N = static_cast<node>(nodes_count(g));
+		std::set<node> open;
 		open.insert(src);
 
 		out_preds.resize(N);
@@ -100,11 +100,11 @@ namespace detail {
 			auto it = std::min_element(
                 begin(open),
                 end(open),
-				[&out_dists](node_id x, node_id y) {
+				[&out_dists](node x, node y) {
                     return out_dists[x] < out_dists[y];
                 });
 
-			node_id u = *it;
+			node u = *it;
 			if (stop(u)) {
 				break;
 			}
@@ -112,8 +112,8 @@ namespace detail {
             std::for_each(
                 g.out_begin(u),
                 g.out_end(u),
-                [u, &out_dists, &out_preds, &m, &open](node_id v) mutable {
-                    typename Metric::weight_type new_dist = out_dists[u] + m(link(u, v));
+                [u, &out_dists, &out_preds, &m, &open](node v) mutable {
+                    typename Metric::weight_type new_dist = out_dists[u] + m(edge(u, v));
                     if (new_dist < out_dists[v]) {
                         out_dists[v] = new_dist;
                         out_preds[v] = u;
@@ -138,20 +138,20 @@ namespace detail {
 	template <class Graph, class Metric>
 	void bellman_ford_relax(
 			const Graph& g, const Metric& m,
-			node_id src,
-			std::vector<node_id>& out_preds,
+			node src,
+			std::vector<node>& out_preds,
 			std::vector<typename Metric::weight_type>& out_dists) {
 
-		const node_id N = static_cast<node_id>(nodes_count(g));
+		const node N = static_cast<node>(nodes_count(g));
 
 		out_preds.resize(N);
 		out_dists.clear();
 		out_dists.resize(N, weight_limits<typename Metric::weight_type>::inf());
 		out_dists[src] = weight_limits<typename Metric::weight_type>::zero();
 
-		for (node_id i = 0; i < (N - 1); ++i) {
-			for_each_edge(g, [&out_dists, &out_preds, &m](node_id u, node_id v) {
-				typename Metric::weight_type new_dist = out_dists[u] + m(link(u, v));
+		for (node i = 0; i < (N - 1); ++i) {
+			for_each_edge(g, [&out_dists, &out_preds, &m](node u, node v) {
+				typename Metric::weight_type new_dist = out_dists[u] + m(edge(u, v));
 				if (out_dists[v] > new_dist) {
 					out_dists[v] = new_dist;
 					out_preds[v] = u;
@@ -166,24 +166,24 @@ namespace detail {
 // ===============================================================
 
 template <class Graph, class Metric>
-path dijkstra(const Graph& g, const Metric& m, node_id src, node_id dst) {
-	std::vector<node_id> preds;
+path dijkstra(const Graph& g, const Metric& m, node src, node dst) {
+	std::vector<node> preds;
 	std::vector<typename Metric::weight_type> dists;
 	detail::dijkstra_relax(g, m, detail::dst_stop{ dst }, src, preds, dists);
 	return build_path(src, dst, preds);
 }
 
 template <class Graph, class Metric>
-tree prim(const Graph& g, const Metric& m, node_id src) {
-	std::vector<node_id> preds;
+tree prim(const Graph& g, const Metric& m, node src) {
+	std::vector<node> preds;
 	std::vector<typename Metric::weight_type> dists;
 	detail::dijkstra_relax(g, m, detail::never_stop{}, src, preds, dists);
 	return build_tree(preds);
 }
 
 template <class Graph, class Metric>
-path bellman_ford(const Graph& g, const Metric& m, node_id src, node_id dst) {
-	std::vector<node_id> preds;
+path bellman_ford(const Graph& g, const Metric& m, node src, node dst) {
+	std::vector<node> preds;
 	std::vector<typename Metric::weight_type> dists;
 	detail::bellman_ford_relax(g, m, src, preds, dists);
 	return build_path(src, dst, preds);
