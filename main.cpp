@@ -12,6 +12,8 @@ void test();
 // TODO:
 // * add optional begin(.) and end(.) iterators to the weight concept.
 // * node and edge iterators for topological sturctures.
+// todo: split map_weight into directed map_weight = map<pair<node, node>> and undirected - half of the current impl.
+// todo: rephrase the weight as an additive, ordered monoid.
 
 /// The architecture:
 ///
