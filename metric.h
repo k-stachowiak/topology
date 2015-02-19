@@ -3,10 +3,15 @@
 
 #include <numeric>
 
+#include "config.h"
+#include "weight.h"
+
 #if 0
+
 concept Metric : Regular {
     Weight& operator()(Link);
 };
+
 #endif
 
 /// Metric which will return Weight(1) for any Link.
@@ -37,9 +42,6 @@ struct hop_metric {
 ///
 template <class Weight, bool bidirectional = false>
 class map_metric {
-
-    // Helper definition of the edge normalization operation.
-    static edge normalize(const edge& e) { return std::minmax(e.first, e.second); }
 
     // Implementation
 	std::map<edge, Weight> m_impl;

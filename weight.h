@@ -13,15 +13,16 @@
 #include "config.h"
 
 #if 0
+
 concept Weight : Regular, TotallyOrdered {
     Weight operator+(Weight, Weight);
 };
-// NOTE: All numeric built-in types are (Weight)s.
 
 concept MultiWeight : Weight {
     ForwardIterator<Weight> begin();
     ForwardIterator<Weight> end();
 };
+
 #endif
 
 /// Comparison functor for multi_weight that will only compare the I-th weights.
@@ -42,13 +43,15 @@ template <class T, int M>
 using cost_multi_compare = index_multi_compare<T, M, 0>;
 
 /// Array of weights.
+/// The difference between the array_weight and std::array lies in the definition
+/// of the +operator, and the ordering (less than).
 ///
-/// @tparam T Type of the Weight concept
-/// @tparam M Natural (positive) number indicating the count of the aggregated weights
+/// @tparam T Underlying Weight
+/// @tparam M Natural+ number indicating the count of the aggregated weights
 /// @tparam Cmp Comparison functor defining the total ordering of this type.
 ///
 template <typename T, int M, typename Cmp = cost_multi_compare<T, M>>
-struct multi_weight {
+struct array_weight {
 
     // Helper typedefs.
     typedef T value_type;
@@ -63,42 +66,42 @@ struct multi_weight {
 	typedef typename decltype(m_impl)::const_iterator const_iterator;
 
     // Enable initialization from explicit input.
-	multi_weight(std::initializer_list<T> l) {
+	array_weight(std::initializer_list<T> l) {
 		std::copy(l.begin(), l.end(), m_impl.begin());
         assert(l.size() == M);
     }
 
     // Enable conversion from a container that provides begin and end iterators.
     template <class Container>
-	multi_weight(const Container& values) {
+	array_weight(const Container& values) {
 		std::copy(begin(values), end(values), begin(m_impl));
 	}
 
 	// Semiregular:
-	multi_weight() = default;
-	multi_weight(const multi_weight& x) = default;
-	multi_weight(multi_weight&& x) : m_impl(x.m_impl) {}
-	multi_weight& operator=(const multi_weight& x) = default;
-	multi_weight& operator=(multi_weight&& x) {
+	array_weight() = default;
+	array_weight(const array_weight& x) = default;
+	array_weight(array_weight&& x) : m_impl(x.m_impl) {}
+	array_weight& operator=(const array_weight& x) = default;
+	array_weight& operator=(array_weight&& x) {
 		m_impl = std::move(x.m_impl);
 		return *this;
 	}
 
 	// Regular:
-	friend bool operator==(const multi_weight& x, const multi_weight& y) { return x.m_impl == y.m_impl; }
-	friend bool operator!=(const multi_weight& x, const multi_weight& y) { return !(x == y); }
+	friend bool operator==(const array_weight& x, const array_weight& y) { return x.m_impl == y.m_impl; }
+	friend bool operator!=(const array_weight& x, const array_weight& y) { return !(x == y); }
 
 	// Totally ordered:
-	friend bool operator<(const multi_weight& x, const multi_weight& y) {
+	friend bool operator<(const array_weight& x, const array_weight& y) {
 		static Cmp cmp;
 		return cmp(x.m_impl, y.m_impl);
 	}
-	friend bool operator>(const multi_weight& x, const multi_weight& y) { return y < x; }
-	friend bool operator<=(const multi_weight& x, const multi_weight& y) { return !(y < x); }
-	friend bool operator>=(const multi_weight& x, const multi_weight& y) { return !(x < y); }
+	friend bool operator>(const array_weight& x, const array_weight& y) { return y < x; }
+	friend bool operator<=(const array_weight& x, const array_weight& y) { return !(y < x); }
+	friend bool operator>=(const array_weight& x, const array_weight& y) { return !(x < y); }
 
 	// Weight operations:
-	friend multi_weight operator+(multi_weight x, const multi_weight& y) {
+	friend array_weight operator+(array_weight x, const array_weight& y) {
 		for (size_t i = 0; i < x.m_impl.size(); ++i) {
 			x.m_impl[i] += y.m_impl[i];
 		}
@@ -132,23 +135,23 @@ struct weight_limits {
 	static T one() { return 1; }
 };
 
-/// Weight limits traits for the type *multi_weight*.
-/// The template arguments are used to instantiate a proper multi_weight type.
+/// Weight limits traits for the type *array_weight*.
+/// The template arguments are used to instantiate a proper array_weight type.
 ///
 template <class T, int M, class Cmp>
-struct weight_limits<multi_weight<T, M, Cmp>> {
-	static multi_weight<T, M, Cmp> inf() {
-		multi_weight<T, M, Cmp> result;
+struct weight_limits<array_weight<T, M, Cmp>> {
+	static array_weight<T, M, Cmp> inf() {
+		array_weight<T, M, Cmp> result;
 		result.m_impl.fill(std::numeric_limits<T>::infinity());
 		return result;
 	}
-	static multi_weight<T, M, Cmp> zero() {
-		multi_weight<T, M, Cmp> result;
+	static array_weight<T, M, Cmp> zero() {
+		array_weight<T, M, Cmp> result;
 		result.m_impl.fill(0);
 		return result;
 	}
-	static multi_weight<T, M, Cmp> one() {
-		multi_weight<T, M, Cmp> result;
+	static array_weight<T, M, Cmp> one() {
+		array_weight<T, M, Cmp> result;
 		result.m_impl.fill(1);
 		return result;
 	}

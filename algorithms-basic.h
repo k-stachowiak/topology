@@ -6,6 +6,8 @@
 #include <limits>
 #include <algorithm>
 
+#include "topology.h"
+#include "weight.h"
 #include "config.h"
 
 // Fundamental algorithms.
@@ -44,7 +46,7 @@ tree build_tree(const PredMap& pm) {
 		if (u == v) {
 			continue;
 		}
-		result.add(u, v);
+		result.set(edge { u, v });
 	}
 	return result;
 }
