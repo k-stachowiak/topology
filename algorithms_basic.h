@@ -23,6 +23,22 @@ bool all_equal(const T& x, const T& y, const Tail&... tail) {
 	return (x == y) && all_equal(y, tail...);
 }
 
+// Topological structure alanysis algorithms.
+// ==========================================
+
+template <class Metric, class Topology>
+typename Metric::weight_type metric_add(const Topology& t, const Metric& m)
+{
+    using Weight = typename Metric::weight_type;
+    Weight result = weight_limits<Weight>::zero;
+
+    for_each_edge(t, [&result, &m](const edge& e) {
+        result += m(e);
+    });
+
+    return result;
+}
+
 // Topological structure building algorithms.
 // ==========================================
 

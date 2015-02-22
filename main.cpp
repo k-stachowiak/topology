@@ -1,11 +1,9 @@
+#include <iterator>
 #include <iostream>
 #include <fstream>
 #include <vector>
 
-#include "topology.h"
-#include "weight.h"
-#include "metric.h"
-#include "algorithms-basic.h"
+#include "test_common.h"
 
 void test();
 

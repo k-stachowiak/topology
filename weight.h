@@ -140,21 +140,28 @@ struct weight_limits {
 ///
 template <class T, int M, class Cmp>
 struct weight_limits<array_weight<T, M, Cmp>> {
-	static array_weight<T, M, Cmp> inf() {
-		array_weight<T, M, Cmp> result;
+
+	static array_weight<T, M, Cmp> inf()
+    {
+        array_weight<T, M, Cmp> result;
 		result.m_impl.fill(std::numeric_limits<T>::infinity());
-		return result;
+        return result;
 	}
-	static array_weight<T, M, Cmp> zero() {
-		array_weight<T, M, Cmp> result;
+
+	static array_weight<T, M, Cmp> zero()
+    {
+        array_weight<T, M, Cmp> result;
 		result.m_impl.fill(0);
-		return result;
+        return result;
 	}
-	static array_weight<T, M, Cmp> one() {
-		array_weight<T, M, Cmp> result;
+
+	static array_weight<T, M, Cmp> one()
+    {
+        array_weight<T, M, Cmp> result;
 		result.m_impl.fill(1);
-		return result;
+        return result;
 	}
+
 };
 
 #endif

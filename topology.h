@@ -16,7 +16,7 @@ concept Graph : Regular {
     ForwardIterator<node> out_end(node);
     void set(edge);
     NaturalZero nodes_count();
-    void for_each_edge(func);
+    static void for_each_edge(graph, func);
 };
 
 concept Path : Regular {
@@ -31,7 +31,7 @@ concept Tree : Regular {
     ForwardIterator<node> out_begin(node);
     ForwardIterator<node> out_end(node);
     NaturalZero nodes_count();
-    void for_each_edge(func);
+    static void for_each_edge(tree, func);
 };
 #endif
 
