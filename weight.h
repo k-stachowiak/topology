@@ -14,59 +14,41 @@
 
 #if 0
 
-concept Weight : Regular, TotallyOrdered {
+concept Weight : Regular {
     Weight operator+(Weight, Weight);
 };
 
-concept MultiWeight : Weight {
+concept MultiWeight<Weight> : Weight {
+    Weight operator[](int);
     ForwardIterator<Weight> begin();
     ForwardIterator<Weight> end();
 };
 
 #endif
 
-/// Comparison functor for multi_weight that will only compare the I-th weights.
-///
-/// @tparam T Elementary weight type,
-/// @tparam M Number of weights in type,
-/// @tparam I The index of the weights to compare.
-///
-template <class T, int M, int I>
-struct index_multi_compare {
-	bool operator()(const std::array<T, M>& x, const std::array<T, M>& y) {
-		return x[I] < y[I];
-	}
-};
-
-/// Shourcut for comparison functor that will only compare 0-th weight in multi_weight.
-template <class T, int M>
-using cost_multi_compare = index_multi_compare<T, M, 0>;
-
 /// Array of weights.
 /// The difference between the array_weight and std::array lies in the definition
-/// of the +operator, and the ordering (less than).
+/// of the +operator.
 ///
 /// @tparam T Underlying Weight
 /// @tparam M Natural+ number indicating the count of the aggregated weights
-/// @tparam Cmp Comparison functor defining the total ordering of this type.
 ///
-template <typename T, int M, typename Cmp = cost_multi_compare<T, M>>
+template <typename Weight, int M>
 struct array_weight {
 
     // Helper typedefs.
-    typedef T value_type;
-    typedef Cmp value_compare;
+    typedef Weight weight_type;
     enum { weight_count = M };
 
     // Implementation of the weight array.
-	std::array<T, M> m_impl;
+	std::array<Weight, M> m_impl;
 
     // Some more typedefs depending on the implementation member.
 	typedef typename decltype(m_impl)::iterator iterator;
 	typedef typename decltype(m_impl)::const_iterator const_iterator;
 
     // Enable initialization from explicit input.
-	array_weight(std::initializer_list<T> l) {
+	array_weight(std::initializer_list<Weight> l) {
 		std::copy(l.begin(), l.end(), m_impl.begin());
         assert(l.size() == M);
     }
@@ -91,15 +73,6 @@ struct array_weight {
 	friend bool operator==(const array_weight& x, const array_weight& y) { return x.m_impl == y.m_impl; }
 	friend bool operator!=(const array_weight& x, const array_weight& y) { return !(x == y); }
 
-	// Totally ordered:
-	friend bool operator<(const array_weight& x, const array_weight& y) {
-		static Cmp cmp;
-		return cmp(x.m_impl, y.m_impl);
-	}
-	friend bool operator>(const array_weight& x, const array_weight& y) { return y < x; }
-	friend bool operator<=(const array_weight& x, const array_weight& y) { return !(y < x); }
-	friend bool operator>=(const array_weight& x, const array_weight& y) { return !(x < y); }
-
 	// Weight operations:
 	friend array_weight operator+(array_weight x, const array_weight& y) {
 		for (typename decltype(x.m_impl)::size_type i = 0; i < x.m_impl.size(); ++i) {
@@ -109,6 +82,7 @@ struct array_weight {
 	}
 
     // MultiWeight operations:
+    const Weight operator[](int index) const { return m_impl[index]; }
     iterator begin() { return m_impl.begin(); }
     const_iterator begin() const { return m_impl.begin(); }
     iterator end() { return m_impl.end(); }
@@ -138,26 +112,26 @@ struct weight_limits {
 /// Weight limits traits for the type *array_weight*.
 /// The template arguments are used to instantiate a proper array_weight type.
 ///
-template <class T, int M, class Cmp>
-struct weight_limits<array_weight<T, M, Cmp>> {
+template <class T, int M>
+struct weight_limits<array_weight<T, M>> {
 
-	static array_weight<T, M, Cmp> inf()
+	static array_weight<T, M> inf()
     {
-        array_weight<T, M, Cmp> result;
+        array_weight<T, M> result;
 		result.m_impl.fill(std::numeric_limits<T>::infinity());
         return result;
 	}
 
-	static array_weight<T, M, Cmp> zero()
+	static array_weight<T, M> zero()
     {
-        array_weight<T, M, Cmp> result;
+        array_weight<T, M> result;
 		result.m_impl.fill(0);
         return result;
 	}
 
-	static array_weight<T, M, Cmp> one()
+	static array_weight<T, M> one()
     {
-        array_weight<T, M, Cmp> result;
+        array_weight<T, M> result;
 		result.m_impl.fill(1);
         return result;
 	}

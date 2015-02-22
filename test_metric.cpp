@@ -36,29 +36,10 @@ namespace {
         assert(s == t);
     }
 
-    void index_adapter_test()
-    {
-        using weight_type = array_weight<double, 2>;
-
-        edge e1 { 0, 1 };
-        edge e2 { 1, 2 };
-
-        map_metric<weight_type, false> m;
-        m(e1) = weight_type { 1.0, 2.0 };
-        m(e2) = weight_type { 2.0, 1.0 };
-
-        index_metric_adapter<decltype(m)> ma0 { &m, 0 };
-        index_metric_adapter<decltype(m)> ma1 { &m, 1 };
-
-        assert(ma0(e1) == ma1(e2));
-        assert(ma1(e1) == ma0(e2));
-    }
-
 }
 
 void test_metric()
 {
     hop_test();
     map_test();
-    index_adapter_test();
 }

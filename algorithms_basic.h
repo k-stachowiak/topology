@@ -108,8 +108,8 @@ namespace detail {
 			auto it = std::min_element(
                 begin(open),
                 end(open),
-				[&out_dists](node x, node y) {
-                    return out_dists[x] < out_dists[y];
+				[&out_dists, &cmp](node x, node y) {
+                    return cmp(out_dists[x], out_dists[y]);
                 });
 
 			node u = *it;

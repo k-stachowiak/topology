@@ -12,7 +12,7 @@ namespace {
         Weight a = weight_limits<Weight>::one();
         Weight b = weight_limits<Weight>::one() + weight_limits<Weight>::one();
         Weight c = weight_limits<Weight>::one() + weight_limits<Weight>::one() + weight_limits<Weight>::one();
-        return is_regular(a, b) && is_totally_ordered(a, b) && is_additive_monoid(zero, a, b, c);
+        return is_regular(a, b) && is_additive_monoid(zero, a, b, c);
     }
 
 }
