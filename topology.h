@@ -143,7 +143,6 @@ struct adj_matrix_graph {
         }
     };
 
-
 	// This is an adjacency matric implementation of the Graph concept.
 
 	std::deque<bool> matrix;

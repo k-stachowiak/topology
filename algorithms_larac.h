@@ -7,19 +7,6 @@
 
 namespace detail {
 
-    template <class Metric, class Topology>
-    typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& t)
-    {
-        using Weight = typename Metric::weight_type;
-
-        Weight result = weight_limits<Weight>::zero();
-        for_each_edge(t, [&m, &result](node from, node to) {
-            result = result + m(edge { from, to });
-        });
-
-        return result;
-    }
-
     template <class MultiWeight>
     constexpr bool larac_assert()
     {
@@ -49,7 +36,7 @@ path larac(const Graph& g, const Metric& m, double constraint, node src, node ds
 
     // Check for immediate success.
     path pc = dijkstra(g, m, src, dst, ccmp);
-    auto pc_weight = detail::accumulate_weight(m, pc);
+    auto pc_weight = accumulate_weight(m, pc);
     double dpc = pc_weight[1];
     if (dpc <= constraint) {
         return pc;
@@ -57,7 +44,7 @@ path larac(const Graph& g, const Metric& m, double constraint, node src, node ds
 
     // Check for immediate failure.
     path pd = dijkstra(g, m, src, dst, dcmp);
-    auto pd_weight = detail::accumulate_weight(m, pd);
+    auto pd_weight = accumulate_weight(m, pd);
     double dpd = pd_weight[1];
     if (dpd > constraint) {
         return {};
@@ -72,7 +59,7 @@ path larac(const Graph& g, const Metric& m, double constraint, node src, node ds
 
         auto lccmp = weight_cmp_lin_cmb<MultiWeight> { 1.0, lambda }; // 1 * cost + l * delay
         path np = dijkstra(g, m, src, dst, lccmp);
-        auto np_weight = detail::accumulate_weight(m, np);
+        auto np_weight = accumulate_weight(m, np);
 
         if (np_weight[1] > constraint) {
             pc = np;
