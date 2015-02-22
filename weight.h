@@ -102,7 +102,7 @@ struct array_weight {
 
 	// Weight operations:
 	friend array_weight operator+(array_weight x, const array_weight& y) {
-		for (size_t i = 0; i < x.m_impl.size(); ++i) {
+		for (typename decltype(x.m_impl)::size_type i = 0; i < x.m_impl.size(); ++i) {
 			x.m_impl[i] += y.m_impl[i];
 		}
 		return x;

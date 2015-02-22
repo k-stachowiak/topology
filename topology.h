@@ -77,7 +77,7 @@ struct adj_list_graph {
         adjacency[from].push_back(to);
     }
 
-	friend size_t nodes_count(const adj_list_graph& g)
+	friend int nodes_count(const adj_list_graph& g)
     {
 		return g.adjacency.size();
 	}
@@ -85,8 +85,8 @@ struct adj_list_graph {
 	template <class Func>
 	friend void for_each_edge(const adj_list_graph& g, Func f)
     {
-		size_t N = nodes_count(g);
-		for (size_t u = 0; u < N; ++u) {
+		int N = nodes_count(g);
+		for (int u = 0; u < N; ++u) {
 			for (node v : g.adjacency.at(u)) {
 				f(u, v);
 			}
@@ -147,15 +147,15 @@ struct adj_matrix_graph {
 	// This is an adjacency matric implementation of the Graph concept.
 
 	std::deque<bool> matrix;
-	size_t nodes;
+	int nodes;
 
 	template <typename I>
 	adj_matrix_graph(I first, I last) :
 		matrix{ first, last }
 	{
 		double nodes_dbl = sqrt(matrix.size());
-		assert((nodes_dbl - (double)(size_t)nodes_dbl) == 0.0);
-		nodes = static_cast<size_t>(nodes_dbl);
+		assert((nodes_dbl - (double)(int)nodes_dbl) == 0.0);
+		nodes = static_cast<int>(nodes_dbl);
 	}
 
 	// Semiregular:
@@ -214,11 +214,11 @@ struct adj_matrix_graph {
             return;
         }
 
-        size_t new_nodes = max_index + 1;
+        int new_nodes = max_index + 1;
         std::deque<bool> new_matrix(new_nodes * new_nodes, false);
 
-        for (size_t f = 0; f < nodes; ++f) {
-            for (size_t t = 0; t < nodes; ++t) {
+        for (int f = 0; f < nodes; ++f) {
+            for (int t = 0; t < nodes; ++t) {
                 new_matrix[new_nodes * f + t] = matrix[nodes * f + t];
             }
         }
@@ -229,7 +229,7 @@ struct adj_matrix_graph {
         matrix = std::move(new_matrix);
     }
 
-	friend size_t nodes_count(const adj_matrix_graph& g)
+	friend int nodes_count(const adj_matrix_graph& g)
     {
 		return g.nodes;
 	}
@@ -237,9 +237,9 @@ struct adj_matrix_graph {
 	template <class Func>
 	friend void for_each_edge(const adj_matrix_graph& g, Func f)
     {
-		size_t N = nodes_count(g);
-		for (size_t u = 0; u < N; ++u) {
-			for (size_t v = 0; v < N; ++v) {
+		int N = nodes_count(g);
+		for (int u = 0; u < N; ++u) {
+			for (int v = 0; v < N; ++v) {
 				if (g.matrix[N * u + v]) {
 					f(u, v);
 				}
@@ -253,7 +253,7 @@ struct adj_matrix_graph {
 
 using path = std::deque<node>;
 
-inline size_t nodes_count(const path &p)
+inline int nodes_count(const path &p)
 {
     return p.size();
 }

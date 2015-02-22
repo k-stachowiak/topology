@@ -41,7 +41,7 @@ path build_path(node src, node dst, const PredMap& pm) {
 template <class PredMap>
 tree build_tree(const PredMap& pm) {
 	tree result;
-	for (size_t i = 0; i < pm.size(); ++i) { // TODO: Get rid of these incorrect size_t for interation
+	for (typename PredMap::size_type i = 0; i < pm.size(); ++i) {
 		node u = pm[i], v = i;
 		if (u == v) {
 			continue;
@@ -120,7 +120,7 @@ namespace detail {
             std::for_each(
                 g.out_begin(u),
                 g.out_end(u),
-                [u, &out_dists, &out_preds, &m, &open, &cmp](node v) mutable {
+                [u, &out_dists, &out_preds, &m, &open, &cmp](node v) {
                     typename Metric::weight_type new_dist = out_dists[u] + m(edge(u, v));
                     if (cmp(new_dist, out_dists[v])) {
                         out_dists[v] = new_dist;
@@ -162,7 +162,7 @@ namespace detail {
 		out_dists[src] = weight_limits<typename Metric::weight_type>::zero();
 
 		for (node i = 0; i < (N - 1); ++i) {
-			for_each_edge(g, [&out_dists, &out_preds, &m, &cmp] mutable (node u, node v) {
+			for_each_edge(g, [&out_dists, &out_preds, &m, &cmp] (node u, node v) {
 				typename Metric::weight_type new_dist = out_dists[u] + m(edge(u, v));
 				if (cmp(new_dist, out_dists[v])) {
 					out_dists[v] = new_dist;
