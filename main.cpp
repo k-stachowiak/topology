@@ -7,10 +7,6 @@
 
 void test();
 
-// TODO:
-//
-// - implement edge iterator for the topologies to replace the for_each_edge operation.
-
 /// The architecture:
 ///
 /// Weights:

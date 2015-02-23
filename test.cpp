@@ -5,7 +5,6 @@
 
 void test()
 {
-    test_weight();
     test_metric();
     test_topology();
     test_algorithm();

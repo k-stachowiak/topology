@@ -11,6 +11,7 @@ concept WeightCmp<Weight> : Functor {
 
 template <typename Weight>
 struct weight_cmp_less {
+    static_assert(is_weight<Weight>(), "weight_cmp_less static assert");
     bool operator()(const Weight& x, const Weight& y)
     {
         return x < y;
@@ -19,6 +20,11 @@ struct weight_cmp_less {
 
 template <class MultiWeight, int I>
 struct weight_cmp_index {
+
+    static_assert(
+        is_multiweight<MultiWeight>() && I >= 0 && I < MultiWeight::weight_count,
+        "weight_cmp_index static assert");
+    
     bool operator()(const MultiWeight& x, const MultiWeight& y) const
     {
 		return x[I] < y[I];
@@ -30,6 +36,8 @@ using weight_cmp_cost = weight_cmp_index<MultiWeight, 0>;
 
 template <class MultiWeight>
 class weight_cmp_lin_cmb {
+
+    static_assert(is_multiweight<MultiWeight>(), "weight_cmp_lin_cmb static assert");
 
     using Weight = typename MultiWeight::weight_type;
     enum {
@@ -49,7 +57,7 @@ class weight_cmp_lin_cmb {
 
     Weight aggregate(const MultiWeight& x) const
     {
-        Weight result = weight_limits<Weight>::zero();
+        Weight result = weight_traits<Weight>::zero();
         for (int i = 0; i < coef_count; ++i) {
             result += x[i] * m_coefficients[i];
         }
@@ -77,6 +85,10 @@ public:
 template <class MultiWeight>
 class weight_cmp_lagrange {
 
+    static_assert(
+        is_multiweight<MultiWeight>() && MultiWeight::weight_count > 1,
+        "weight_cmp_lagrange static assert");
+
     using Weight = typename MultiWeight::weight_type;
     enum {
         weight_count = MultiWeight::weight_count,
@@ -93,11 +105,10 @@ class weight_cmp_lagrange {
             ConstrIter constr_begin, ConstrIter constr_end)
     {
         const int coef_distance = std::distance(coef_begin, coef_end);
-        assert(coef_distance == coef_count);
-        std::copy(coef_begin, coef_end, begin(m_coefficients));
-
         const int constr_distance = std::distance(constr_begin, constr_end);
+        assert(coef_distance == coef_count);
         assert(constr_distance == constr_count);
+        std::copy(coef_begin, coef_end, begin(m_coefficients));
         std::copy(constr_begin, constr_end, begin(m_constraints));
     }
 

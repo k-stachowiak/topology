@@ -105,7 +105,6 @@ void for_each_example_metric_dbl(Func f)
     f(edge { 4, 5 }, 9.0);
 }
 
-void test_weight();
 void test_metric();
 void test_topology();
 void test_algorithm();

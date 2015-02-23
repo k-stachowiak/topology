@@ -15,8 +15,9 @@ concept Graph : Regular {
     ForwardIterator<node> out_begin(node);
     ForwardIterator<node> out_end(node);
     void set(edge);
-    NaturalZero nodes_count();
-    static void for_each_edge(graph, func);
+    static NaturalZero nodes_count();
+    static Graph::const_edge_iterator edge_begin(Graph);
+    static Graph::const_edge_iterator edge_end(Graph);
 };
 
 concept Path : Regular {
@@ -31,7 +32,6 @@ concept Tree : Regular {
     ForwardIterator<node> out_begin(node);
     ForwardIterator<node> out_end(node);
     NaturalZero nodes_count();
-    static void for_each_edge(tree, func);
 };
 #endif
 
@@ -40,9 +40,55 @@ concept Tree : Regular {
 
 struct adj_list_graph {
 
-	// This is an adjacency list implementation of the Graph concept.
-
 	std::deque<std::deque<node>> adjacency;
+
+    struct const_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
+
+        const adj_list_graph *graph;
+        int nd, adj;
+
+        const_edge_iterator() : graph { nullptr }, nd { -1 }, adj { -1 } {}
+        const_edge_iterator(const const_edge_iterator&) = default;
+        const_edge_iterator(const_edge_iterator&&) = default;
+        const_edge_iterator& operator=(const const_edge_iterator&) = default;
+        const_edge_iterator& operator=(const_edge_iterator&&) = default;
+
+        const_edge_iterator(const adj_list_graph *g, int n, int a) : graph { g }, nd { n }, adj { a } {}
+
+        friend bool operator==(const const_edge_iterator& x, const const_edge_iterator& y)
+        {
+            return x.graph == y.graph && x.nd == y.nd && x.adj == y.adj;
+        }
+
+        friend bool operator!=(const const_edge_iterator& x, const const_edge_iterator& y)
+        {
+            return !(x == y);
+        }
+
+        const_edge_iterator& operator++()
+        {
+            if (++adj == static_cast<int>(graph->adjacency.at(nd).size())) {
+                ++nd;
+                adj = 0;
+            }
+            return *this;
+        }
+
+        const const_edge_iterator operator++(int)
+        {
+            const_edge_iterator copy = *this;
+            ++(*this);
+            return copy;
+        }
+
+        edge operator*() const
+        {
+            return {
+                static_cast<node>(nd),
+                graph->adjacency.at(nd).at(adj),
+            };
+        }
+    };
 
 	// Semiregular: by default
 	// Regular:
@@ -82,19 +128,21 @@ struct adj_list_graph {
 		return g.adjacency.size();
 	}
 
-	template <class Func>
-	friend void for_each_edge(const adj_list_graph& g, Func f)
+    friend const_edge_iterator edge_begin(const adj_list_graph& g)
     {
-		int N = nodes_count(g);
-		for (int u = 0; u < N; ++u) {
-			for (node v : g.adjacency.at(u)) {
-				f(u, v);
-			}
-		}
-	}
+        return { &g, 0, 0 };
+    }
+
+    friend const_edge_iterator edge_end(const adj_list_graph& g)
+    {
+        return { &g, static_cast<node>(g.adjacency.size()), static_cast<node>(0) };
+    }
 };
 
 struct adj_matrix_graph {
+
+	std::deque<bool> matrix;
+	int nodes;
 
     struct out_iterator : std::iterator<std::forward_iterator_tag, node> {
 
@@ -143,33 +191,72 @@ struct adj_matrix_graph {
         }
     };
 
-	// This is an adjacency matric implementation of the Graph concept.
+    struct const_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
 
-	std::deque<bool> matrix;
-	int nodes;
+        const adj_matrix_graph *graph;
+        int u, v;
 
-	template <typename I>
-	adj_matrix_graph(I first, I last) :
-		matrix{ first, last }
-	{
-		double nodes_dbl = sqrt(matrix.size());
-		assert((nodes_dbl - (double)(int)nodes_dbl) == 0.0);
-		nodes = static_cast<int>(nodes_dbl);
-	}
+        const_edge_iterator() : graph { nullptr }, u { -1 }, v { -1 } {}
+        const_edge_iterator(const const_edge_iterator&) = default;
+        const_edge_iterator(const_edge_iterator&&) = default;
+        const_edge_iterator& operator=(const const_edge_iterator&) = default;
+        const_edge_iterator& operator=(const_edge_iterator&&) = default;
+
+        const_edge_iterator(const adj_matrix_graph *g, int u, int v) : graph { g }, u { u }, v { v } {}
+
+        friend bool operator==(const const_edge_iterator& x, const const_edge_iterator& y)
+        {
+            return x.graph == y.graph && x.u == y.u && x.v == y.v;
+        }
+
+        friend bool operator!=(const const_edge_iterator& x, const const_edge_iterator& y)
+        {
+            return !(x == y);
+        }
+
+        const_edge_iterator& operator++()
+        {
+            int N = nodes_count(*graph);
+
+            do {
+                if (++v == N) {
+                    if (++u == N) {
+                        break;
+                    }
+                    v = 0;
+                }
+            } while (!graph->matrix.at(N * u + v));
+
+            return *this;
+        }
+
+        const const_edge_iterator operator++(int)
+        {
+            const_edge_iterator copy = *this;
+            ++(*this);
+            return copy;
+        }
+
+        edge operator*() const
+        {
+            return { static_cast<node>(u), static_cast<node>(v) };
+        }
+    };
 
 	// Semiregular:
 	adj_matrix_graph() : nodes{ 0 } {}
 	~adj_matrix_graph() = default;
 	adj_matrix_graph(const adj_matrix_graph& x) = default;
-	adj_matrix_graph(adj_matrix_graph&& x) :
-		matrix{ std::move(x.matrix) },
-		nodes{ std::move(x.nodes) }
-	{}
+	adj_matrix_graph(adj_matrix_graph&& x) = default;
 	adj_matrix_graph& operator=(const adj_matrix_graph& x) = default;
-	adj_matrix_graph& operator=(adj_matrix_graph&& x) {
-		matrix = std::move(x.matrix);
-		nodes = std::move(x.nodes);
-		return *this;
+	adj_matrix_graph& operator=(adj_matrix_graph&& x) = default;
+
+	template <typename I>
+	adj_matrix_graph(I first, I last) : matrix{ first, last }
+	{
+		double nodes_dbl = sqrt(matrix.size());
+		assert((nodes_dbl - (double)(int)nodes_dbl) == 0.0);
+		nodes = static_cast<int>(nodes_dbl);
 	}
 
 	// Regular:
@@ -233,18 +320,23 @@ struct adj_matrix_graph {
 		return g.nodes;
 	}
 
-	template <class Func>
-	friend void for_each_edge(const adj_matrix_graph& g, Func f)
+    friend const_edge_iterator edge_begin(const adj_matrix_graph& g)
     {
-		int N = nodes_count(g);
-		for (int u = 0; u < N; ++u) {
-			for (int v = 0; v < N; ++v) {
-				if (g.matrix[N * u + v]) {
-					f(u, v);
-				}
-			}
-		}
-	}
+        const_edge_iterator result { &g, 0, 0 };
+
+        if (!g.matrix.at(0)) {
+            ++result;
+        }
+
+        return result;
+    }
+
+    friend const_edge_iterator edge_end(const adj_matrix_graph& g)
+    {
+        int N = nodes_count(g);
+        return { &g, static_cast<node>(N), static_cast<node>(N) };
+    }
+
 };
 
 // Path concept implementations.
@@ -310,14 +402,6 @@ struct tree {
     {
         return m_impl.equal_range(x).second;
     }
-
-	template <class Func>
-	friend void for_each_edge(const tree& t, Func f)
-    {
-		for (const auto& pr : t.m_impl) {
-			f(pr.first, pr.second);
-		}
-	}
 };
 
 #endif

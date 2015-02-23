@@ -32,7 +32,7 @@ struct hop_metric {
 	// Operations:
 	weight_type operator()(const edge&) const
     {
-		return weight_limits<Weight>::one();
+		return weight_traits<Weight>::one();
 	}
 };
 

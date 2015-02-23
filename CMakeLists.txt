@@ -10,5 +10,4 @@ add_executable(top
     test.cpp
         test_metric.cpp
         test_topology.cpp
-        test_weight.cpp
         test_algorithm.cpp)

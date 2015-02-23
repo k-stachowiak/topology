@@ -14,17 +14,29 @@
 
 #if 0
 
-concept Weight : Regular {
-    Weight operator+(Weight, Weight);
-};
+concept Weight = arithmetic
 
-concept MultiWeight<Weight> : Weight {
+concept MultiWeight<Weight> {
+    static MultiWeight operator+(MultiWeight, MultiWeight);
     Weight operator[](int);
     ForwardIterator<Weight> begin();
     ForwardIterator<Weight> end();
 };
 
 #endif
+
+template <class T>
+constexpr bool is_weight()
+{
+    return std::is_arithmetic<T>::value;
+}
+
+template <class T>
+constexpr bool is_multiweight()
+{
+    // TODO: add missing assertions
+    return is_regular<T>();
+}
 
 /// Array of weights.
 /// The difference between the array_weight and std::array lies in the definition
@@ -36,26 +48,25 @@ concept MultiWeight<Weight> : Weight {
 template <typename Weight, int M>
 struct array_weight {
 
-    // Helper typedefs.
     typedef Weight weight_type;
     enum { weight_count = M };
 
-    // Implementation of the weight array.
-	std::array<Weight, M> m_impl;
+    static_assert(M > 0 && is_weight<Weight>(), "array_weight template arguments assertion.");
 
-    // Some more typedefs depending on the implementation member.
+	std::array<Weight, M> m_impl;
 	typedef typename decltype(m_impl)::iterator iterator;
 	typedef typename decltype(m_impl)::const_iterator const_iterator;
 
-    // Enable initialization from explicit input.
-	array_weight(std::initializer_list<Weight> l) {
+    // Custom constructors:
+	array_weight(std::initializer_list<Weight> l)
+    {
 		std::copy(l.begin(), l.end(), m_impl.begin());
         assert(l.size() == M);
     }
 
-    // Enable conversion from a container that provides begin and end iterators.
     template <class Container>
-	array_weight(const Container& values) {
+	array_weight(const Container& values)
+    {
 		std::copy(begin(values), end(values), begin(m_impl));
 	}
 
@@ -74,7 +85,8 @@ struct array_weight {
 	friend bool operator!=(const array_weight& x, const array_weight& y) { return !(x == y); }
 
 	// Weight operations:
-	friend array_weight operator+(array_weight x, const array_weight& y) {
+	friend array_weight operator+(array_weight x, const array_weight& y)
+    {
 		for (typename decltype(x.m_impl)::size_type i = 0; i < x.m_impl.size(); ++i) {
 			x.m_impl[i] += y.m_impl[i];
 		}
@@ -90,7 +102,7 @@ struct array_weight {
 };
 
 #if 0
-concept WeightLimits<T> {
+concept WeightTraits<T> {
     static T inf();
     static T zero();
     static T one();
@@ -103,7 +115,7 @@ concept WeightLimits<T> {
 /// @tparam The built-in numeric type.
 ///
 template <class T>
-struct weight_limits {
+struct weight_traits {
 	static T inf() { return std::numeric_limits<T>::infinity(); }
 	static T zero() { return 0; }
 	static T one() { return 1; }
@@ -113,7 +125,7 @@ struct weight_limits {
 /// The template arguments are used to instantiate a proper array_weight type.
 ///
 template <class T, int M>
-struct weight_limits<array_weight<T, M>> {
+struct weight_traits<array_weight<T, M>> {
 
 	static array_weight<T, M> inf()
     {
