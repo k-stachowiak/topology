@@ -27,7 +27,7 @@ struct weight_cmp_index {
     
     bool operator()(const MultiWeight& x, const MultiWeight& y) const
     {
-		return x[I] < y[I];
+        return x[I] < y[I];
     }
 };
 

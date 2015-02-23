@@ -21,19 +21,19 @@ template <class Weight>
 struct hop_metric {
 
     // Helper typedef.
-	typedef Weight weight_type;
+    typedef Weight weight_type;
 
-	// Semiregular: by default.
+    // Semiregular: by default.
 
-	// Regular:
-	friend bool operator==(const hop_metric& x, const hop_metric& y) { return true; }
-	friend bool operator!=(const hop_metric& x, const hop_metric& y) { return !(x == y); }
+    // Regular:
+    friend bool operator==(const hop_metric& x, const hop_metric& y) { return true; }
+    friend bool operator!=(const hop_metric& x, const hop_metric& y) { return !(x == y); }
 
-	// Operations:
-	weight_type operator()(const edge&) const
+    // Operations:
+    weight_type operator()(const edge&) const
     {
-		return weight_traits<Weight>::one();
-	}
+        return weight_traits<Weight>::one();
+    }
 };
 
 /// Metric that enables assigning particular weights to particular edges.
@@ -45,15 +45,15 @@ template <class Weight, bool bidirectional = false>
 class map_metric {
 
     // Implementation
-	std::map<edge, Weight> m_impl;
+    std::map<edge, Weight> m_impl;
 
 public:
-	typedef Weight weight_type;
+    typedef Weight weight_type;
 
-	// Semiregular: by default.
+    // Semiregular: by default.
 
-	// Regular:
-	friend bool operator==(const map_metric& x, const map_metric& y)
+    // Regular:
+    friend bool operator==(const map_metric& x, const map_metric& y)
     {
         // In any case implementation equality means the metric equality.
         if (x.m_impl == y.m_impl) {
@@ -86,22 +86,22 @@ public:
         return true;
     }
 
-	friend bool operator!=(const map_metric& x, const map_metric& y) { return !(x == y); }
+    friend bool operator!=(const map_metric& x, const map_metric& y) { return !(x == y); }
 
-	// Operations:
-	const weight_type& operator()(const edge& e) const
+    // Operations:
+    const weight_type& operator()(const edge& e) const
     {
         return bidirectional
             ? m_impl.at(normalize(e))
             : m_impl.at(e);
-	}
+    }
 
-	weight_type& operator()(const edge &e)
+    weight_type& operator()(const edge &e)
     {
         return bidirectional
             ? m_impl[normalize(e)]
             : m_impl[e];
-	}
+    }
 };
 
 #endif

@@ -15,12 +15,12 @@
 
 template<typename T>
 bool all_equal(const T& x, const T& y) {
-	return (x == y);
+    return (x == y);
 }
 
 template<typename T, typename... Tail>
 bool all_equal(const T& x, const T& y, const Tail&... tail) {
-	return (x == y) && all_equal(y, tail...);
+    return (x == y) && all_equal(y, tail...);
 }
 
 // Topological structure analysis algorithms.
@@ -44,27 +44,27 @@ typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& 
 
 template <class PredMap>
 path build_path(node src, node dst, const PredMap& pm) {
-	path result;
-	node u = dst;
-	while (u != src) {
-		result.push_front(u);
-		u = pm[u];
-	}
-	result.push_front(src);
-	return result;
+    path result;
+    node u = dst;
+    while (u != src) {
+        result.push_front(u);
+        u = pm[u];
+    }
+    result.push_front(src);
+    return result;
 }
 
 template <class PredMap>
 tree build_tree(const PredMap& pm) {
-	tree result;
-	for (typename PredMap::size_type i = 0; i < pm.size(); ++i) {
-		node u = pm[i], v = i;
-		if (u == v) {
-			continue;
-		}
-		result.set(edge { u, v });
-	}
-	return result;
+    tree result;
+    for (typename PredMap::size_type i = 0; i < pm.size(); ++i) {
+        node u = pm[i], v = i;
+        if (u == v) {
+            continue;
+        }
+        result.set(edge { u, v });
+    }
+    return result;
 }
 
 // Tological optimization algorithms.
@@ -75,14 +75,14 @@ namespace detail {
     // Stop conditions for the Dijkstra's algorithm implementation.
     // ------------------------------------------------------------
 
-	struct dst_stop {
-		node dst;
-		bool operator()(node u) { return u == dst; }
-	};
+    struct dst_stop {
+        node dst;
+        bool operator()(node u) { return u == dst; }
+    };
 
-	struct never_stop {
-		bool operator()(node) { return false; }
-	};
+    struct never_stop {
+        bool operator()(node) { return false; }
+    };
 
     /// Dijkstra's algorithm raw implementation.
     ///
@@ -99,39 +99,39 @@ namespace detail {
     /// @param stop The stop condition functor,
     /// @param cmp The weight comparator functor,
     ///
-	template <class Graph, class Metric, typename Stop, typename WeightCmp>
-	void dijkstra_relax(
-			const Graph& g,
+    template <class Graph, class Metric, typename Stop, typename WeightCmp>
+    void dijkstra_relax(
+            const Graph& g,
             const Metric& m,
             node src,
-			std::vector<node>& out_preds,
-			std::vector<typename Metric::weight_type>& out_dists,
-			Stop stop,
+            std::vector<node>& out_preds,
+            std::vector<typename Metric::weight_type>& out_dists,
+            Stop stop,
             const WeightCmp& cmp) {
 
-		const node N = static_cast<node>(nodes_count(g));
+        const node N = static_cast<node>(nodes_count(g));
 
-		std::set<node> open;
-		open.insert(src);
+        std::set<node> open;
+        open.insert(src);
 
-		out_preds.resize(N);
-		out_dists.clear();
-		out_dists.resize(N, weight_traits<typename Metric::weight_type>::inf());
-		out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
+        out_preds.resize(N);
+        out_dists.clear();
+        out_dists.resize(N, weight_traits<typename Metric::weight_type>::inf());
+        out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
-		while (!open.empty()) {
+        while (!open.empty()) {
 
-			auto it = std::min_element(
+            auto it = std::min_element(
                 begin(open),
                 end(open),
-				[&out_dists, &cmp](node x, node y) {
+                [&out_dists, &cmp](node x, node y) {
                     return cmp(out_dists[x], out_dists[y]);
                 });
 
-			node u = *it;
-			if (stop(u)) {
-				break;
-			}
+            node u = *it;
+            if (stop(u)) {
+                break;
+            }
 
             std::for_each(
                 g.out_begin(u),
@@ -145,9 +145,9 @@ namespace detail {
                     }
                 });
 
-			open.erase(u);
-		}
-	}
+            open.erase(u);
+        }
+    }
 
     /// The Bellman-Ford relaxation raw implementation.
     ///
@@ -161,23 +161,23 @@ namespace detail {
     /// @param out_preds The out parameter returning the predecessors' map,
     /// @param out_dists The out parameter returning the distances' map.
     /// @param cmp The weight comparator functor,
-	template <class Graph, class Metric, typename WeightCmp>
-	void bellman_ford_relax(
-			const Graph& g,
+    template <class Graph, class Metric, typename WeightCmp>
+    void bellman_ford_relax(
+            const Graph& g,
             const Metric& m,
-			node src,
-			std::vector<node>& out_preds,
-			std::vector<typename Metric::weight_type>& out_dists,
+            node src,
+            std::vector<node>& out_preds,
+            std::vector<typename Metric::weight_type>& out_dists,
             const WeightCmp& cmp) {
 
-		const node N = static_cast<node>(nodes_count(g));
+        const node N = static_cast<node>(nodes_count(g));
 
-		out_preds.resize(N);
-		out_dists.clear();
-		out_dists.resize(N, weight_traits<typename Metric::weight_type>::inf());
-		out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
+        out_preds.resize(N);
+        out_dists.clear();
+        out_dists.resize(N, weight_traits<typename Metric::weight_type>::inf());
+        out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
-		for (node i = 0; i < (N - 1); ++i) {
+        for (node i = 0; i < (N - 1); ++i) {
             std::for_each(
                 edge_begin(g),
                 edge_end(g),
@@ -190,8 +190,8 @@ namespace detail {
                         out_preds[v] = u;
                     }
                 });
-		}
-	}
+        }
+    }
 
 }
 
@@ -200,26 +200,26 @@ namespace detail {
 
 template <class Graph, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
 path dijkstra(const Graph& g, const Metric& m, node src, node dst, const WeightCmp& cmp = WeightCmp {}) {
-	std::vector<node> preds;
-	std::vector<typename Metric::weight_type> dists;
-	detail::dijkstra_relax(g, m, src, preds, dists, detail::dst_stop{ dst }, cmp);
-	return build_path(src, dst, preds);
+    std::vector<node> preds;
+    std::vector<typename Metric::weight_type> dists;
+    detail::dijkstra_relax(g, m, src, preds, dists, detail::dst_stop{ dst }, cmp);
+    return build_path(src, dst, preds);
 }
 
 template <class Graph, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
 tree prim(const Graph& g, const Metric& m, node src, const WeightCmp& cmp = WeightCmp {}) {
-	std::vector<node> preds;
-	std::vector<typename Metric::weight_type> dists;
-	detail::dijkstra_relax(g, m, src, preds, dists, detail::never_stop{}, cmp);
-	return build_tree(preds);
+    std::vector<node> preds;
+    std::vector<typename Metric::weight_type> dists;
+    detail::dijkstra_relax(g, m, src, preds, dists, detail::never_stop{}, cmp);
+    return build_tree(preds);
 }
 
 template <class Graph, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
 path bellman_ford(const Graph& g, const Metric& m, node src, node dst, const WeightCmp& cmp = WeightCmp {}) {
-	std::vector<node> preds;
-	std::vector<typename Metric::weight_type> dists;
-	detail::bellman_ford_relax(g, m, src, preds, dists, cmp);
-	return build_path(src, dst, preds);
+    std::vector<node> preds;
+    std::vector<typename Metric::weight_type> dists;
+    detail::bellman_ford_relax(g, m, src, preds, dists, cmp);
+    return build_path(src, dst, preds);
 }
 
 #endif

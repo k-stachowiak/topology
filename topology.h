@@ -40,7 +40,7 @@ concept Tree : Regular {
 
 struct adj_list_graph {
 
-	std::deque<std::deque<node>> adjacency;
+    std::deque<std::deque<node>> adjacency;
 
     struct const_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
 
@@ -90,19 +90,19 @@ struct adj_list_graph {
         }
     };
 
-	// Semiregular: by default
-	// Regular:
-	friend bool operator==(const adj_list_graph& x, const adj_list_graph& y)
+    // Semiregular: by default
+    // Regular:
+    friend bool operator==(const adj_list_graph& x, const adj_list_graph& y)
     {
-		return x.adjacency == y.adjacency;
-	}
+        return x.adjacency == y.adjacency;
+    }
 
-	friend bool operator!=(const adj_list_graph& x, const adj_list_graph& y)
+    friend bool operator!=(const adj_list_graph& x, const adj_list_graph& y)
     {
-		return !(x == y);
-	}
+        return !(x == y);
+    }
 
-	// Operations:
+    // Operations:
     std::deque<node>::const_iterator out_begin(node x) const
     {
         return adjacency[x].begin();
@@ -123,10 +123,10 @@ struct adj_list_graph {
         adjacency[from].push_back(to);
     }
 
-	friend int nodes_count(const adj_list_graph& g)
+    friend int nodes_count(const adj_list_graph& g)
     {
-		return g.adjacency.size();
-	}
+        return g.adjacency.size();
+    }
 
     friend const_edge_iterator edge_begin(const adj_list_graph& g)
     {
@@ -141,8 +141,8 @@ struct adj_list_graph {
 
 struct adj_matrix_graph {
 
-	std::deque<bool> matrix;
-	int nodes;
+    std::deque<bool> matrix;
+    int nodes;
 
     struct out_iterator : std::iterator<std::forward_iterator_tag, node> {
 
@@ -243,34 +243,34 @@ struct adj_matrix_graph {
         }
     };
 
-	// Semiregular:
-	adj_matrix_graph() : nodes{ 0 } {}
-	~adj_matrix_graph() = default;
-	adj_matrix_graph(const adj_matrix_graph& x) = default;
-	adj_matrix_graph(adj_matrix_graph&& x) = default;
-	adj_matrix_graph& operator=(const adj_matrix_graph& x) = default;
-	adj_matrix_graph& operator=(adj_matrix_graph&& x) = default;
+    // Semiregular:
+    adj_matrix_graph() : nodes{ 0 } {}
+    ~adj_matrix_graph() = default;
+    adj_matrix_graph(const adj_matrix_graph& x) = default;
+    adj_matrix_graph(adj_matrix_graph&& x) = default;
+    adj_matrix_graph& operator=(const adj_matrix_graph& x) = default;
+    adj_matrix_graph& operator=(adj_matrix_graph&& x) = default;
 
-	template <typename I>
-	adj_matrix_graph(I first, I last) : matrix{ first, last }
-	{
-		double nodes_dbl = sqrt(matrix.size());
-		assert((nodes_dbl - (double)(int)nodes_dbl) == 0.0);
-		nodes = static_cast<int>(nodes_dbl);
-	}
-
-	// Regular:
-	friend bool operator==(const adj_matrix_graph& x, const adj_matrix_graph& y)
+    template <typename I>
+    adj_matrix_graph(I first, I last) : matrix{ first, last }
     {
-		return x.nodes == y.nodes && x.matrix == y.matrix;
-	}
+        double nodes_dbl = sqrt(matrix.size());
+        assert((nodes_dbl - (double)(int)nodes_dbl) == 0.0);
+        nodes = static_cast<int>(nodes_dbl);
+    }
 
-	friend bool operator!=(const adj_matrix_graph& x, const adj_matrix_graph& y)
+    // Regular:
+    friend bool operator==(const adj_matrix_graph& x, const adj_matrix_graph& y)
     {
-		return !(x == y);
-	}
+        return x.nodes == y.nodes && x.matrix == y.matrix;
+    }
 
-	// Operations:
+    friend bool operator!=(const adj_matrix_graph& x, const adj_matrix_graph& y)
+    {
+        return !(x == y);
+    }
+
+    // Operations:
     adj_matrix_graph::out_iterator out_begin(node u) const
     {
         auto first = begin(matrix) + u * nodes;
@@ -315,10 +315,10 @@ struct adj_matrix_graph {
         matrix = std::move(new_matrix);
     }
 
-	friend int nodes_count(const adj_matrix_graph& g)
+    friend int nodes_count(const adj_matrix_graph& g)
     {
-		return g.nodes;
-	}
+        return g.nodes;
+    }
 
     friend const_edge_iterator edge_begin(const adj_matrix_graph& g)
     {
@@ -373,25 +373,25 @@ void for_each_edge(const path &p, F f)
 
 struct tree {
 
-	std::multimap<node, node> m_impl;
+    std::multimap<node, node> m_impl;
 
-	// Semiregular: by default
-	// Regular:
-	friend bool operator==(const tree& x, const tree& y)
+    // Semiregular: by default
+    // Regular:
+    friend bool operator==(const tree& x, const tree& y)
     {
-		return x.m_impl == y.m_impl;
-	}
+        return x.m_impl == y.m_impl;
+    }
 
-	friend bool operator!=(const tree& x, const tree& y)
+    friend bool operator!=(const tree& x, const tree& y)
     {
-		return !(x == y);
-	}
+        return !(x == y);
+    }
 
-	// Operations:
-	void set(const edge& e)
+    // Operations:
+    void set(const edge& e)
     {
-		m_impl.insert(e);
-	}
+        m_impl.insert(e);
+    }
 
     std::multimap<node, node>::const_iterator out_begin(node x) const
     {
