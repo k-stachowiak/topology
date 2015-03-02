@@ -1,7 +1,9 @@
 #include <cassert>
 
 #include "test_common.h"
+#include "metric.h"
 #include "weight.h"
+#include "algorithms_basic.h"
 #include "topology.h"
 
 namespace {
@@ -39,10 +41,22 @@ namespace {
         assert(adj_list.adjacency == expected_adj_list);
     }
 
+	void non_graph_path_finding_test()
+	{
+		hop_metric<int> m;
+
+		path p { 1, 2, 3, 4, 5 };
+		path expected_presult { 4, 3, 2 };
+		path presult = dijkstra(p, m, 4, 2);
+
+		assert(expected_presult == presult);
+	}
+
 }
 
 void test_topology()
 {
     initialization_test();
+	non_graph_path_finding_test();
 }
 

@@ -129,19 +129,19 @@ namespace {
 
     void test_mlra()
     {
-        using Weight = array_weight<double, 2>;
+        // using Weight = array_weight<double, 2>;
 
-        adj_list_graph g;
-        map_metric<Weight> m;
-        fill_grid(
-            g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 }, 
-            { { 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 } });
+        // adj_list_graph g;
+        // map_metric<Weight> m;
+        // fill_grid(
+        //     g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 }, 
+        //     { { 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 } });
 
-        node src = 3;
-        std::vector<node> dst { 2, 5, 8 };
-        tree t = mlra(g, m, 10000, src, begin(dst), end(dst));
+        // node src = 3;
+        // std::vector<node> dst { 2, 5, 8 };
+        // tree t = mlra(g, m, 10000, src, begin(dst), end(dst));
 
-        print(t.m_impl);
+        // print(t.m_impl);
     }
 
     void test_larac()
