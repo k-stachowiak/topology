@@ -66,7 +66,9 @@ struct adj_list_graph {
         const_edge_iterator& operator++()
         {
             if (++adj == static_cast<int>(graph->adjacency.at(nd).size())) {
-                ++nd;
+            	do {
+                    ++nd;
+            	} while (nd != (int)graph->adjacency.size() && !graph->adjacency.at(nd).size());
                 adj = 0;
             }
             return *this;
@@ -359,8 +361,8 @@ using path = std::deque<node>;
 struct path_out_iterator : std::iterator<std::forward_iterator_tag, node> {
 	enum Phase {
 		FIRST, SECOND, END
-	} phase;
-	node first, second;
+	} phase = FIRST;
+	node first = -1, second = -1;
 
 	// Semiregular:
 	~path_out_iterator() = default;
@@ -520,10 +522,10 @@ struct tree {
 
         typedef std::multimap<node, node>::const_iterator impl_type;
 
-        bool has_children;
-        bool at_parent;
-        node parent;
-        node current;
+        bool has_children = false;
+        bool at_parent = false;
+        node parent = -1;
+        node current = -1;
         impl_type current_child;
 
         // Semiregular:

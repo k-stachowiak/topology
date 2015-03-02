@@ -44,7 +44,7 @@ namespace {
         // o    o
         //    /
         //   /
-        // o
+        // o    o
         for (int w = 0; w < (width - 1); ++w) {
             for (int h = 1; h < height; ++h) {
                 edge e = { coords_to_node(w, h), coords_to_node(w + 1, h - 1) };
@@ -53,6 +53,9 @@ namespace {
             }
         }
 
+        // o    o
+        //
+        //
         // o -- o (lower edges)
         for (int w = 0; w < (width - 1); ++w) {
             edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
@@ -60,10 +63,10 @@ namespace {
             m(e) = exp_weight;
         }
 
-        // o (right edges)
-        // |
-        // |
-        // o
+        // o    o (right edges)
+        //      |
+        //      |
+        // o    o
         for (int w = 0; w < (width - 1); ++w) {
             edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
             g.set(e);
