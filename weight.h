@@ -9,6 +9,7 @@
 #include <utility>
 #include <iterator>
 #include <algorithm>
+#include <type_traits>
 
 #include "config.h"
 
@@ -109,14 +110,9 @@ concept WeightTraits<T> {
 };
 #endif
 
-/// Trait class enabling providing of basic numeric values.
-/// It is specialized later on for custom types.
-///
-/// @tparam The built-in numeric type.
-///
-template <class T>
+template <typename T>
 struct weight_traits {
-    static T inf() { return std::numeric_limits<T>::infinity(); }
+    static T inf() { return std::numeric_limits<T>::max(); }
     static T zero() { return 0; }
     static T one() { return 1; }
 };

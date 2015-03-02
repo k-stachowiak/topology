@@ -32,11 +32,34 @@ typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& 
     using Weight = typename Metric::weight_type;
 
     Weight result = weight_traits<Weight>::zero();
-    for_each_edge(t, [&m, &result](node from, node to) {
-        result = result + m(edge { from, to });
+	std::for_each(edge_begin(t), edge_end(t), [&m, &result](const edge& e) {
+        result = result + m(e);
     });
 
     return result;
+}
+
+template <typename In, typename Out>
+void unique_nodes(In edge_begin, In edge_end, Out out_begin)
+{
+	std::vector<node> nodes;
+
+	while (edge_begin != edge_end) {
+		nodes.push_back((*edge_begin).first);
+		nodes.push_back((*edge_begin).second);
+		++edge_begin;
+	}
+
+	std::sort(begin(nodes), end(nodes));
+	std::copy(begin(nodes), std::unique(begin(nodes), end(nodes)), out_begin);
+}
+
+template <typename EdgeIter>
+node max_node(EdgeIter first, EdgeIter last)
+{
+	std::vector<node> un;
+	unique_nodes(first, last, std::back_inserter(un));
+	return *std::max_element(begin(un), end(un));
 }
 
 // Topological structure building algorithms.
@@ -86,12 +109,12 @@ namespace detail {
 
     /// Dijkstra's algorithm raw implementation.
     ///
-    /// @tparam Graph A Topology,
-    /// @tparam Metric A Metric,
+    /// @tparam Topology A topology,
+    /// @tparam Metric A metric,
     /// @tparam Stop A functor defining the stop condition for the algorithm.
     /// @tparam WeightCmp A functor providing the means of comparing weights.
     ///
-    /// @param g The graph,
+    /// @param t The topology,
     /// @param m The metric,
     /// @param src The source for the relaxation,
     /// @param out_preds The out parameter returning the predecessors' map,
@@ -99,9 +122,9 @@ namespace detail {
     /// @param stop The stop condition functor,
     /// @param cmp The weight comparator functor,
     ///
-    template <class Graph, class Metric, typename Stop, typename WeightCmp>
+    template <class Topology, class Metric, typename Stop, typename WeightCmp>
     void dijkstra_relax(
-            const Graph& g,
+            const Topology& t,
             const Metric& m,
             node src,
             std::vector<node>& out_preds,
@@ -109,14 +132,14 @@ namespace detail {
             Stop stop,
             const WeightCmp& cmp) {
 
-        const node N = static_cast<node>(nodes_count(g));
+        const node mn = max_node(edge_begin(t), edge_end(t));
 
         std::set<node> open;
         open.insert(src);
 
-        out_preds.resize(N);
+        out_preds.resize(mn + 1);
         out_dists.clear();
-        out_dists.resize(N, weight_traits<typename Metric::weight_type>::inf());
+        out_dists.resize(mn + 1, weight_traits<typename Metric::weight_type>::inf());
         out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         while (!open.empty()) {
@@ -134,8 +157,8 @@ namespace detail {
             }
 
             std::for_each(
-                g.out_begin(u),
-                g.out_end(u),
+                out_begin(t, u),
+                out_end(t, u),
                 [u, &out_dists, &out_preds, &m, &open, &cmp](node v) {
                     typename Metric::weight_type new_dist = out_dists[u] + m(edge(u, v));
                     if (cmp(new_dist, out_dists[v])) {
@@ -151,36 +174,37 @@ namespace detail {
 
     /// The Bellman-Ford relaxation raw implementation.
     ///
-    /// @tparam Graph A Topology,
-    /// @tparam Metric A Metric,
+    /// @tparam Topology A topology,
+    /// @tparam Metric A metric,
     /// @tparam WeightCmp A functor providing the means of comparing weights.
     ///
-    /// @param g The graph,
+    /// @param t The topology,
     /// @param m The metric,
     /// @param src The source of the relaxation,
     /// @param out_preds The out parameter returning the predecessors' map,
     /// @param out_dists The out parameter returning the distances' map.
     /// @param cmp The weight comparator functor,
-    template <class Graph, class Metric, typename WeightCmp>
+    template <class Topology, class Metric, typename WeightCmp>
     void bellman_ford_relax(
-            const Graph& g,
+            const Topology& t,
             const Metric& m,
             node src,
             std::vector<node>& out_preds,
             std::vector<typename Metric::weight_type>& out_dists,
             const WeightCmp& cmp) {
 
-        const node N = static_cast<node>(nodes_count(g));
+        const node mn = max_node(edge_begin(t), edge_end(t));
+		const node N = nodes_count(t);
 
-        out_preds.resize(N);
+        out_preds.resize(mn + 1);
         out_dists.clear();
-        out_dists.resize(N, weight_traits<typename Metric::weight_type>::inf());
+        out_dists.resize(mn + 1, weight_traits<typename Metric::weight_type>::inf());
         out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         for (node i = 0; i < (N - 1); ++i) {
             std::for_each(
-                edge_begin(g),
-                edge_end(g),
+                edge_begin(t),
+                edge_end(t),
                 [&out_dists, &out_preds, &m, &cmp] (edge e) {
                     node u = e.first;
                     node v = e.second;
@@ -198,27 +222,27 @@ namespace detail {
 // The convenient API for the topological optimization algorithms.
 // ===============================================================
 
-template <class Graph, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
-path dijkstra(const Graph& g, const Metric& m, node src, node dst, const WeightCmp& cmp = WeightCmp {}) {
+template <class Topology, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
+path dijkstra(const Topology& t, const Metric& m, node src, node dst, const WeightCmp& cmp = WeightCmp {}) {
     std::vector<node> preds;
     std::vector<typename Metric::weight_type> dists;
-    detail::dijkstra_relax(g, m, src, preds, dists, detail::dst_stop{ dst }, cmp);
+    detail::dijkstra_relax(t, m, src, preds, dists, detail::dst_stop{ dst }, cmp);
     return build_path(src, dst, preds);
 }
 
-template <class Graph, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
-tree prim(const Graph& g, const Metric& m, node src, const WeightCmp& cmp = WeightCmp {}) {
+template <class Topology, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
+tree prim(const Topology& t, const Metric& m, node src, const WeightCmp& cmp = WeightCmp {}) {
     std::vector<node> preds;
     std::vector<typename Metric::weight_type> dists;
-    detail::dijkstra_relax(g, m, src, preds, dists, detail::never_stop{}, cmp);
+    detail::dijkstra_relax(t, m, src, preds, dists, detail::never_stop{}, cmp);
     return build_tree(preds);
 }
 
-template <class Graph, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
-path bellman_ford(const Graph& g, const Metric& m, node src, node dst, const WeightCmp& cmp = WeightCmp {}) {
+template <class Topology, class Metric, typename WeightCmp = std::less<typename Metric::weight_type>>
+path bellman_ford(const Topology& t, const Metric& m, node src, node dst, const WeightCmp& cmp = WeightCmp {}) {
     std::vector<node> preds;
     std::vector<typename Metric::weight_type> dists;
-    detail::bellman_ford_relax(g, m, src, preds, dists, cmp);
+    detail::bellman_ford_relax(t, m, src, preds, dists, cmp);
     return build_path(src, dst, preds);
 }
 

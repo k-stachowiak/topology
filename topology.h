@@ -11,28 +11,35 @@
 #include "config.h"
 
 #if 0
-concept Graph : Regular {
-    ForwardIterator<node> out_begin(node);
-    ForwardIterator<node> out_end(node);
-    void set(edge);
+concept Topology : Regular {
     static NaturalZero nodes_count();
-    static Graph::const_edge_iterator edge_begin(Graph);
-    static Graph::const_edge_iterator edge_end(Graph);
-};
+    static ForwardIterator<node> out_begin(node);
+    static ForwardIterator<node> out_end(node);
+}
 
-concept Path : Regular {
+concept Graph : Topology {
+
+	// Mutation
+    void set(edge);
+
+	// Analysis
+    static const_edge_iterator edge_begin(Graph);
+    static const_edge_iterator edge_end(Graph);
+}
+
+concept Path : Topology {
+
+	// Mutation
     void push_front(node);
     void push_back(node);
-    static NaturalZero nodes_count(path);
-    static void for_each_edge(path, func);
-};
 
-concept Tree : Regular {
+	// Analysis
+    static void for_each_edge(path, func);
+}
+
+concept Tree : Topology {
     void set(edge);
-    ForwardIterator<node> out_begin(node);
-    ForwardIterator<node> out_end(node);
-    NaturalZero nodes_count();
-};
+}
 #endif
 
 // Graph concept implementations.
@@ -103,16 +110,6 @@ struct adj_list_graph {
     }
 
     // Operations:
-    std::deque<node>::const_iterator out_begin(node x) const
-    {
-        return adjacency[x].begin();
-    }
-
-    std::deque<node>::const_iterator out_end(node x) const
-    {
-        return adjacency[x].end();
-    }
-
     void set(const edge& e)
     {
         node from = e.first;
@@ -126,6 +123,16 @@ struct adj_list_graph {
     friend int nodes_count(const adj_list_graph& g)
     {
         return g.adjacency.size();
+    }
+
+    friend std::deque<node>::const_iterator out_begin(const adj_list_graph& g, node x)
+    {
+        return g.adjacency[x].begin();
+    }
+
+    friend std::deque<node>::const_iterator out_end(const adj_list_graph& g, node x)
+    {
+        return g.adjacency[x].end();
     }
 
     friend const_edge_iterator edge_begin(const adj_list_graph& g)
@@ -152,9 +159,12 @@ struct adj_matrix_graph {
         impl_type current;
 
         // Semiregular:
+		~out_iterator() = default;
         out_iterator() = default;
         out_iterator(const out_iterator&) = default;
+        out_iterator(out_iterator&&) = default;
         out_iterator& operator=(const out_iterator&) = default;
+        out_iterator& operator=(out_iterator&&) = default;
 
         friend bool operator==(const out_iterator& x, const out_iterator& y)
         {
@@ -271,24 +281,6 @@ struct adj_matrix_graph {
     }
 
     // Operations:
-    adj_matrix_graph::out_iterator out_begin(node u) const
-    {
-        auto first = begin(matrix) + u * nodes;
-        auto last = first + nodes;
-        out_iterator result { first, last };
-
-        auto first_true = std::find(first, last, true);
-        result.current = first_true;
-
-        return result;
-    }
-
-    adj_matrix_graph::out_iterator out_end(node u) const
-    {
-        auto last = begin(matrix) + u * nodes + nodes;
-        return out_iterator { last, last };
-    }
-
     void set(const edge& e)
     {
         node from = e.first;
@@ -320,6 +312,24 @@ struct adj_matrix_graph {
         return g.nodes;
     }
 
+    friend out_iterator out_begin(const adj_matrix_graph& g, node u)
+    {
+        auto first = begin(g.matrix) + u * g.nodes;
+        auto last = first + g.nodes;
+        out_iterator result { first, last };
+
+        auto first_true = std::find(first, last, true);
+        result.current = first_true;
+
+        return result;
+    }
+
+    friend out_iterator out_end(const adj_matrix_graph& g, node u)
+    {
+        auto last = begin(g.matrix) + u * g.nodes + g.nodes;
+        return out_iterator { last, last };
+    }
+
     friend const_edge_iterator edge_begin(const adj_matrix_graph& g)
     {
         const_edge_iterator result { &g, 0, 0 };
@@ -344,28 +354,161 @@ struct adj_matrix_graph {
 
 using path = std::deque<node>;
 
+struct path_out_iterator : std::iterator<std::forward_iterator_tag, node> {
+	enum Phase {
+		FIRST, SECOND, END
+	} phase;
+	node first, second;
+
+	// Semiregular:
+	~path_out_iterator() = default;
+	path_out_iterator() = default;
+	path_out_iterator(const path_out_iterator&) = default;
+	path_out_iterator(path_out_iterator&&) = default;
+	path_out_iterator& operator=(const path_out_iterator&) = default;
+	path_out_iterator& operator=(path_out_iterator&&) = default;
+
+	// Regular:
+	friend bool operator==(const path_out_iterator& x, const path_out_iterator& y)
+	{
+		if (x.phase != y.phase) {
+			return false;
+		}
+
+		switch (x.phase) {
+		case FIRST:
+			return x.first == y.first;
+		case SECOND:
+			return x.second == y.second;
+		case END:
+			return true;
+		}
+
+		throw std::runtime_error { "Should never get here. " };
+	}
+
+	friend bool operator!=(const path_out_iterator& x, const path_out_iterator& y)
+	{
+		return !(x == y);
+	}
+
+	// Custom constructor:
+	path_out_iterator(Phase phase, node first, node second) :
+		phase { phase }, first { first }, second { second }
+	{}
+
+	// Iterator specific operations:
+	path_out_iterator& operator++()
+	{
+		switch (phase) {
+		case FIRST:
+			phase = SECOND;
+			break;
+		case SECOND:
+			phase = END;
+			break;
+		case END:
+			break;
+		}
+		return *this;
+	}
+
+	const path_out_iterator operator++(int)
+	{
+		path_out_iterator copy = *this;
+		++(*this);
+		return copy;
+	}
+
+	node operator*() const
+	{
+		switch (phase) {
+		case FIRST:
+			return first;
+		case SECOND:
+			return second;
+		default:
+			return -1;
+		}
+	}
+};
+
+struct path_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
+	const path *p;
+	int index;
+
+	// Semiregular:
+	~path_edge_iterator() = default;
+	path_edge_iterator() = default;
+	path_edge_iterator(const path_edge_iterator&) = default;
+	path_edge_iterator(path_edge_iterator&&) = default;
+	path_edge_iterator& operator=(const path_edge_iterator&) = default;
+	path_edge_iterator& operator=(path_edge_iterator&&) = default;
+
+	// Regular:
+	friend bool operator==(const path_edge_iterator& x, const path_edge_iterator& y)
+	{
+		return x.p == y.p && x.index == y.index;
+	}
+
+	friend bool operator!=(const path_edge_iterator& x, const path_edge_iterator& y)
+	{
+		return !(x == y);
+	}
+
+	// Custom constructor:
+	path_edge_iterator(const path* p, int index) : p { p }, index { index } {}
+
+	// Iterator specific operations:
+	path_edge_iterator& operator++()
+	{
+		++index;
+		return *this;
+	}
+
+	const path_edge_iterator operator++(int)
+	{
+		path_edge_iterator copy = *this;
+		++(*this);
+		return copy;
+	}
+
+	edge operator*() const
+	{
+		return { p->at(index), p->at(index + 1) };
+	}
+};
+
+inline path_out_iterator out_begin(const path& p, node n)
+{
+	if (n == p.front()) {
+		return { path_out_iterator::SECOND, n, p.at(1) };
+	} else if (n == p.back()) {
+		return { path_out_iterator::SECOND, n, p.at(p.size() - 2) };
+	} else {
+		auto it = std::find(begin(p), end(p), n);
+		return { path_out_iterator::FIRST, *(it - 1), *(it + 1) };
+	}
+}
+
+inline path_out_iterator out_end(const path& p, node n)
+{
+	return { path_out_iterator::END, n, n };
+}
+
+inline path_edge_iterator edge_begin(const path& p)
+{
+	return { &p, 0 };
+}
+
+inline path_edge_iterator edge_end(const path& p)
+{
+	return { &p, static_cast<node>(p.size() - 1) };
+}
+
 inline int nodes_count(const path &p)
 {
     return p.size();
-}
-
-template <class F>
-void for_each_edge(const path &p, F f)
-{
-    auto first = begin(p);
-    auto next = first;
-    auto last = end(p);
-
-    if (first == last) {
-        return;
-    }
-
-    ++next;
-    while (next != last) {
-        f(*first, *next);
-        ++first;
-        ++next;
-    }
 }
 
 // Tree concept implementations.
@@ -393,14 +536,14 @@ struct tree {
         m_impl.insert(e);
     }
 
-    std::multimap<node, node>::const_iterator out_begin(node x) const
+    friend std::multimap<node, node>::const_iterator out_begin(const tree&t, node x)
     {
-        return m_impl.equal_range(x).first;
+        return t.m_impl.equal_range(x).first;
     }
 
-    std::multimap<node, node>::const_iterator out_end(node x) const
+    friend std::multimap<node, node>::const_iterator out_end(const tree&t, node x)
     {
-        return m_impl.equal_range(x).second;
+        return t.m_impl.equal_range(x).second;
     }
 };
 
