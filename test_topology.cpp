@@ -50,6 +50,15 @@ namespace {
 		path presult = dijkstra(p, m, 4, 2);
 
 		assert(expected_presult == presult);
+
+        tree t { {
+            { 0, 1 }, { 0, 2 },
+            { 1, 3 }, { 1, 4 }, { 2, 5 }, { 2, 6 }
+        } };
+        path expected_tresult { 6, 2, 0, 1, 3 };
+        path tresult = dijkstra(t, m, 6, 3);
+
+        assert(expected_tresult == tresult);
 	}
 
 }
