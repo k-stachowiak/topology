@@ -32,8 +32,8 @@ typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& 
     using Weight = typename Metric::weight_type;
 
     Weight result = weight_traits<Weight>::zero();
-    for_each_edge(t, [&m, &result](node from, node to) {
-        result = result + m(edge { from, to });
+    std::for_each(edge_begin(t), edge_end(t), [&m, &result](const edge& e) {
+        result = result + m(e);
     });
 
     return result;
@@ -121,9 +121,7 @@ namespace detail {
 
         while (!open.empty()) {
 
-            auto it = std::min_element(
-                begin(open),
-                end(open),
+            auto it = std::min_element(begin(open), end(open),
                 [&out_dists, &cmp](node x, node y) {
                     return cmp(out_dists[x], out_dists[y]);
                 });
@@ -133,9 +131,7 @@ namespace detail {
                 break;
             }
 
-            std::for_each(
-                g.out_begin(u),
-                g.out_end(u),
+            std::for_each(g.out_begin(u), g.out_end(u),
                 [u, &out_dists, &out_preds, &m, &open, &cmp](node v) {
                     typename Metric::weight_type new_dist = out_dists[u] + m(edge(u, v));
                     if (cmp(new_dist, out_dists[v])) {
@@ -178,9 +174,7 @@ namespace detail {
         out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         for (node i = 0; i < (N - 1); ++i) {
-            std::for_each(
-                edge_begin(g),
-                edge_end(g),
+            std::for_each(edge_begin(g), edge_end(g),
                 [&out_dists, &out_preds, &m, &cmp] (edge e) {
                     node u = e.first;
                     node v = e.second;

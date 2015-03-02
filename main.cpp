@@ -7,6 +7,8 @@
 
 void test();
 
+// TODO: test/pix prim
+
 /// The architecture:
 ///
 /// Weights:

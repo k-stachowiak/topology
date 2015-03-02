@@ -5,8 +5,77 @@
 
 #include "algorithms_basic.h"
 #include "algorithms_larac.h"
+#include "algorithms_mlra.h"
 
 namespace {
+
+    template <class Graph, class Metric, class Weight>
+    void fill_grid(
+            Graph& g, Metric& m,
+            int width, int height,
+            const Weight& cheap_weight,
+            const Weight& exp_weight,
+            const std::vector<edge>& cheap_edges)
+    {
+        // Edges + expensive weights.
+        // --------------------------
+        auto coords_to_node = [width] (int x, int y) -> node { return y * width + x; };
+            
+        // o -- o
+        // | \_
+        // |  \_
+        // o    o
+        for (int w = 0; w < (width - 1); ++w) {
+            for (int h = 0; h < (height - 1); ++h) {
+                edge e1 = { coords_to_node(w, h), coords_to_node(w + 1, h) };
+                edge e2 = { coords_to_node(w, h), coords_to_node(w, h + 1) };
+                edge e3 = { coords_to_node(w, h), coords_to_node(w + 1, h + 1) };
+
+                g.set(e1);
+                g.set(e2);
+                g.set(e3);
+
+                m(e1) = exp_weight;
+                m(e2) = exp_weight;
+                m(e3) = exp_weight;
+            }
+        }
+
+        // o    o
+        //    /
+        //   /
+        // o
+        for (int w = 0; w < (width - 1); ++w) {
+            for (int h = 1; h < height; ++h) {
+                edge e = { coords_to_node(w, h), coords_to_node(w + 1, h - 1) };
+                g.set(e);
+                m(e) = exp_weight;
+            }
+        }
+
+        // o -- o (lower edges)
+        for (int w = 0; w < (width - 1); ++w) {
+            edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
+            g.set(e);
+            m(e) = exp_weight;
+        }
+
+        // o (right edges)
+        // |
+        // |
+        // o
+        for (int w = 0; w < (width - 1); ++w) {
+            edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
+            g.set(e);
+            m(e) = exp_weight;
+        }
+
+        // Cheap weights.
+        // --------------
+        for (const edge& e : cheap_edges) {
+            m(e) = cheap_weight;
+        }
+    }
 
     template <class Func>
     void for_each_mpiech_edge(Func f)
@@ -50,6 +119,31 @@ namespace {
         f(edge { 7, 4 }, array_weight<double, 2> { 199.0, 561.0 });
     }
 
+    template <class Graph>
+    void prepare_wiki_graph(Graph& g)
+    {
+        for_each_example_edge([&g](const edge& e) {
+            g.set(e); g.set(reverse(e));
+        });
+    }
+
+    void test_mlra()
+    {
+        using Weight = array_weight<double, 2>;
+
+        adj_list_graph g;
+        map_metric<Weight> m;
+        fill_grid(
+            g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 }, 
+            { { 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 } });
+
+        node src = 3;
+        std::vector<node> dst { 2, 5, 8 };
+        tree t = mlra(g, m, 10000, src, begin(dst), end(dst));
+
+        print(t.m_impl);
+    }
+
     void test_larac()
     {
         // Expected runtime scenario:
@@ -67,26 +161,18 @@ namespace {
         // c2 = 503
         // d2 = 1000
 
-        using weight_type = array_weight<double, 2>;
+        using Weight = array_weight<double, 2>;
 
         adj_matrix_graph g;
         for_each_mpiech_edge([&g](const edge& e) { g.set(e); g.set(reverse(e)); });
 
-        map_metric<weight_type, true> m;
-        for_each_mpiech_weight([&m](const edge& e, const weight_type& w) { m(e) = w; });
+        map_metric<Weight, true> m;
+        for_each_mpiech_weight([&m](const edge& e, const Weight& w) { m(e) = w; });
 
         path expected_p { 0, 6, 4, 7 };
         path p = larac(g, m, 1000.0, 0, 7);
 
         assert(p == expected_p);
-    }
-
-    template <class Graph>
-    void prepare_wiki_graph(Graph& g)
-    {
-        for_each_example_edge([&g](const edge& e) {
-            g.set(e); g.set(reverse(e));
-        });
     }
 
     void test_simple()
@@ -108,20 +194,20 @@ namespace {
 
     void test_multi()
     {
-        using weight_type = array_weight<double, 2>;
+        using Weight = array_weight<double, 2>;
 
         adj_matrix_graph g;
         prepare_wiki_graph(g);
 
-        map_metric<weight_type, true> m;
+        map_metric<Weight, true> m;
         for_each_example_metric_dbl([&m](const edge& e, double val) {
-            m(e) = weight_type { 10 * val, val };
+            m(e) = Weight { 10 * val, val };
         });
 
         path expected_p { 0, 2, 5, 4 };
 
-        path pd = dijkstra(g, m, 0, 4, weight_cmp_cost<weight_type> {});
-        path pb = bellman_ford(g, m, 0, 4, weight_cmp_cost<weight_type> {});
+        path pd = dijkstra(g, m, 0, 4, weight_cmp_cost<Weight> {});
+        path pb = bellman_ford(g, m, 0, 4, weight_cmp_cost<Weight> {});
 
         assert(pd == expected_p);
         assert(pb == expected_p);
@@ -152,4 +238,5 @@ void test_algorithm()
 
     // Test custom algorithms.
     test_larac();
+    test_mlra();
 }

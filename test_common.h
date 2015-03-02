@@ -1,6 +1,7 @@
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H
 
+#include <map>
 #include <deque>
 #include <iostream>
 
@@ -73,6 +74,20 @@ void print(const std::deque<T>& d)
     std::cout << "deq(" << d.size() << ") : ";
     for (const auto& x : d) {
         print(x);
+    }
+    std::cout << std::endl;
+}
+
+template <class T, class U>
+void print(const std::multimap<T, U>& m)
+{
+    std::cout << "multimap(" << m.size() << ") : ";
+    for (const auto& pr : m) {
+        std::cout << " { ";
+        print(pr.first);
+        std::cout << ", ";
+        print(pr.second);
+        std::cout << " },";
     }
     std::cout << std::endl;
 }
