@@ -94,27 +94,6 @@ namespace {
     }
 
     template <class Func>
-    void for_each_mpiech_edge(Func f)
-    {
-        f(edge { 0, 4 });
-        f(edge { 0, 6 });
-        f(edge { 1, 7 });
-        f(edge { 1, 6 });
-        f(edge { 2, 1 });
-        f(edge { 2, 0 });
-        f(edge { 3, 2 });
-        f(edge { 3, 1 });
-        f(edge { 4, 2 });
-        f(edge { 4, 3 });
-        f(edge { 5, 0 });
-        f(edge { 5, 1 });
-        f(edge { 6, 4 });
-        f(edge { 6, 2 });
-        f(edge { 7, 5 });
-        f(edge { 7, 4 });
-    }
-
-    template <class Func>
     void for_each_mpiech_weight(Func f)
     {
         f(edge { 0, 4 }, array_weight<double, 2> { 394.0, 332.0 });
@@ -138,7 +117,7 @@ namespace {
     template <class Graph>
     void prepare_wiki_graph(Graph& g)
     {
-        for_each_example_edge([&g](const edge& e) {
+        for_each_example_metric_dbl([&g](const edge& e, double) {
             g.set(e);
 			g.set(reverse(e));
         });
@@ -184,10 +163,12 @@ namespace {
         using Weight = array_weight<double, 2>;
 
         adj_matrix_graph g;
-        for_each_mpiech_edge([&g](const edge& e) { g.set(e); g.set(reverse(e)); });
-
         map_metric<Weight, true> m;
-        for_each_mpiech_weight([&m](const edge& e, const Weight& w) { m(e) = w; m(reverse(e)) = w; });
+
+        for_each_mpiech_weight([&g, &m](const edge& e, const Weight& w) {
+			g.set(e); g.set(reverse(e));
+			m(e) = w; m(reverse(e)) = w;
+		});
 
         path expected_p { 0, 6, 4, 7 };
         path p = larac(g, m, 1000.0, 0, 7);

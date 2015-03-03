@@ -11,8 +11,8 @@ namespace {
     template <class Graph>
     void fill_example_graph_bi(Graph& g)
     {
-        for_each_example_edge(
-            [&g](const edge& e) { g.set(e); g.set(reverse(e)); }
+        for_each_example_metric_dbl(
+            [&g](const edge& e, double) { g.set(e); g.set(reverse(e)); }
         );
     }
 

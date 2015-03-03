@@ -93,20 +93,6 @@ void print(const std::multimap<T, U>& m)
 }
 
 template <class Func>
-void for_each_example_edge(Func f)
-{
-    f(edge { 0, 1 });
-    f(edge { 0, 2 });
-    f(edge { 0, 5 });
-    f(edge { 1, 2 });
-    f(edge { 1, 3 });
-    f(edge { 2, 3 });
-    f(edge { 2, 5 });
-    f(edge { 3, 4 });
-    f(edge { 4, 5 });
-}
-
-template <class Func>
 void for_each_example_metric_dbl(Func f)
 {
     f(edge { 0, 1 }, 7.0);
