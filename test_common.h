@@ -37,7 +37,7 @@ bool is_totally_ordered(const T& a, const T& b)
 
     assert(a < b);
 
-    return 
+    return
         a == a_prim &&
         a <= a_prim &&
         a >= a_prim &&

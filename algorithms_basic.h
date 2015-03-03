@@ -134,13 +134,16 @@ namespace detail {
 
         const node mn = max_node(edge_begin(t), edge_end(t));
 
+		out_preds.clear();
+        out_dists.clear();
+		for (node n = 0; n <= mn; ++n) {
+			out_dists.push_back(weight_traits<typename Metric::weight_type>::inf());
+			out_preds.push_back(n);
+		}
+        out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
+
         std::set<node> open;
         open.insert(src);
-
-        out_preds.resize(mn + 1);
-        out_dists.clear();
-        out_dists.resize(mn + 1, weight_traits<typename Metric::weight_type>::inf());
-        out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         while (!open.empty()) {
 
@@ -153,7 +156,7 @@ namespace detail {
             if (stop(u)) {
                 break;
             }
-
+			
             std::for_each(
                 out_begin(t, u),
                 out_end(t, u),
@@ -194,9 +197,12 @@ namespace detail {
         const node mn = max_node(edge_begin(t), edge_end(t));
 		const node N = nodes_count(t);
 
-        out_preds.resize(mn + 1);
+		out_preds.clear();
         out_dists.clear();
-        out_dists.resize(mn + 1, weight_traits<typename Metric::weight_type>::inf());
+		for (node n = 0; n <= mn; ++n) {
+			out_dists.push_back(weight_traits<typename Metric::weight_type>::inf());
+			out_preds.push_back(n);
+		}
         out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         for (node i = 0; i < (N - 1); ++i) {

@@ -20,7 +20,7 @@ namespace {
         // Edges + expensive weights.
         // --------------------------
         auto coords_to_node = [width] (int x, int y) -> node { return y * width + x; };
-            
+
         // o -- o
         // | \_
         // |  \_
@@ -31,13 +31,13 @@ namespace {
                 edge e2 = { coords_to_node(w, h), coords_to_node(w, h + 1) };
                 edge e3 = { coords_to_node(w, h), coords_to_node(w + 1, h + 1) };
 
-                g.set(e1);
-                g.set(e2);
-                g.set(e3);
+                g.set(e1); g.set(reverse(e1));
+                g.set(e2); g.set(reverse(e2));
+                g.set(e3); g.set(reverse(e3));
 
-                m(e1) = exp_weight;
-                m(e2) = exp_weight;
-                m(e3) = exp_weight;
+                m(e1) = exp_weight; m(reverse(e1)) = exp_weight;
+                m(e2) = exp_weight; m(reverse(e2)) = exp_weight;
+                m(e3) = exp_weight; m(reverse(e3)) = exp_weight;
             }
         }
 
@@ -48,8 +48,12 @@ namespace {
         for (int w = 0; w < (width - 1); ++w) {
             for (int h = 1; h < height; ++h) {
                 edge e = { coords_to_node(w, h), coords_to_node(w + 1, h - 1) };
+
                 g.set(e);
+                g.set(reverse(e));
+
                 m(e) = exp_weight;
+                m(reverse(e)) = exp_weight;
             }
         }
 
@@ -59,8 +63,12 @@ namespace {
         // o -- o (lower edges)
         for (int w = 0; w < (width - 1); ++w) {
             edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
-            g.set(e);
-            m(e) = exp_weight;
+
+			g.set(e);
+			g.set(reverse(e));
+
+			m(e) = exp_weight;
+			m(reverse(e)) = exp_weight;
         }
 
         // o    o (right edges)
@@ -69,14 +77,19 @@ namespace {
         // o    o
         for (int w = 0; w < (width - 1); ++w) {
             edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
-            g.set(e);
-            m(e) = exp_weight;
+
+			g.set(e);
+			g.set(reverse(e));
+
+			m(e) = exp_weight;
+			m(reverse(e)) = exp_weight;
         }
 
         // Cheap weights.
         // --------------
         for (const edge& e : cheap_edges) {
             m(e) = cheap_weight;
+            m(reverse(e)) = cheap_weight;
         }
     }
 
@@ -126,7 +139,8 @@ namespace {
     void prepare_wiki_graph(Graph& g)
     {
         for_each_example_edge([&g](const edge& e) {
-            g.set(e); g.set(reverse(e));
+            g.set(e);
+			g.set(reverse(e));
         });
     }
 
@@ -137,14 +151,17 @@ namespace {
         adj_list_graph g;
         map_metric<Weight> m;
         fill_grid(
-            g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 }, 
+            g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 },
             { { 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 } });
 
         node src = 3;
         std::vector<node> dst { 2, 5, 8 };
         tree t = mlra(g, m, 10000, src, begin(dst), end(dst));
+		tree expected_tree {{
+			{ 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 }
+		}};
 
-        print(t.m_impl);
+		assert(t == expected_tree);
     }
 
     void test_larac()
@@ -153,12 +170,12 @@ namespace {
         //
         // c0 = 435  - cost
         // d0 = 1584 - delay
-        // 
+        //
         // l1 = 0,228   - lambda
         // p1 = (0 5 7) - path
         // c1 = 435
         // d1 = 1584
-        // 
+        //
         // l2 = 0,116
         // p2 = (0 6 4 7)
         // c2 = 503
@@ -170,7 +187,7 @@ namespace {
         for_each_mpiech_edge([&g](const edge& e) { g.set(e); g.set(reverse(e)); });
 
         map_metric<Weight, true> m;
-        for_each_mpiech_weight([&m](const edge& e, const Weight& w) { m(e) = w; });
+        for_each_mpiech_weight([&m](const edge& e, const Weight& w) { m(e) = w; m(reverse(e)) = w; });
 
         path expected_p { 0, 6, 4, 7 };
         path p = larac(g, m, 1000.0, 0, 7);
@@ -184,7 +201,7 @@ namespace {
         prepare_wiki_graph(g);
 
         map_metric<double, true> m;
-        for_each_example_metric_dbl([&m](const edge& e, double val) { m(e) = val; });
+        for_each_example_metric_dbl([&m](const edge& e, double val) { m(e) = val; m(reverse(e)) = val; });
 
         path expected_p { 0, 2, 5, 4 };
 
@@ -205,6 +222,7 @@ namespace {
         map_metric<Weight, true> m;
         for_each_example_metric_dbl([&m](const edge& e, double val) {
             m(e) = Weight { 10 * val, val };
+            m(reverse(e)) = Weight { 10 * val, val };
         });
 
         path expected_p { 0, 2, 5, 4 };

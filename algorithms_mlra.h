@@ -18,16 +18,15 @@ tree mlra(const Graph& g, const Metric& m, double constraint, node src, NodeIt d
         const auto& dst = *dst_begin++;
         path p = larac(g, m, constraint, src, dst);
         if (p.empty()) {
-            return {};   
+            return {};
         } else {
             std::for_each(edge_begin(p), edge_end(p), [&result](const edge& e) {
-                std::cout << "adding edge (" << e.first << ", " << e.second << ")." << std::endl;
                 result.set(e);
+				result.set(reverse(e));
             });
         }
     }
 
-    print(result.m_impl);
     result = prim(result, m, src, weight_cmp_cost<Weight> {});
     // result = detail::mlra_delete_leaves(result, dst_begin, dst_end);
 
