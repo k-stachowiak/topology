@@ -14,7 +14,7 @@ namespace detail {
         enum { weight_count = MultiWeight::weight_count };
         return weight_count == 2 && std::is_arithmetic<Weight>::value;
     }
-    
+
     template <class Topology, class Metric, class WeightCmp>
     bool larac_equal(const Topology& x, const Topology& y, const Metric& m, const WeightCmp& cmp) {
         const auto wx = accumulate_weight(m, x);

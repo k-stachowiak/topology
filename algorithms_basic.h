@@ -26,39 +26,47 @@ bool all_equal(const T& x, const T& y, const Tail&... tail) {
 // Topological structure analysis algorithms.
 // ==========================================
 
+template <class Topology, typename T, typename Op>
+T accumulate_edge(const Topology& t, const T zero, Op op)
+{
+	T result = zero;
+    std::for_each(edge_begin(t), edge_end(t), [op, &result](const edge& e) {
+        result = op(result, e);
+    });
+	return result;
+}
+
 template <class Metric, class Topology>
 typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& t)
 {
     using Weight = typename Metric::weight_type;
-
-    Weight result = weight_traits<Weight>::zero();
-    std::for_each(edge_begin(t), edge_end(t), [&m, &result](const edge& e) {
-        result = result + m(e);
-    });
-
-    return result;
+	return accumulate_edge(t,
+		weight_traits<Weight>::zero(),
+		[&m](const Weight& w, const edge& e) { return w + m(e); });
 }
 
-template <typename In, typename Out>
-void unique_nodes(In edge_begin, In edge_end, Out out_begin)
+template <typename Topology, typename Out>
+void unique_nodes(const Topology& t, Out out_begin)
 {
 	std::vector<node> nodes;
 
-	while (edge_begin != edge_end) {
-		nodes.push_back((*edge_begin).first);
-		nodes.push_back((*edge_begin).second);
-		++edge_begin;
+	auto first = edge_begin(t);
+	const auto last = edge_end(t);
+	while (first != last) {
+		nodes.push_back((*first).first);
+		nodes.push_back((*first).second);
+		++first;
 	}
 
 	std::sort(begin(nodes), end(nodes));
 	std::copy(begin(nodes), std::unique(begin(nodes), end(nodes)), out_begin);
 }
 
-template <typename EdgeIter>
-node max_node(EdgeIter first, EdgeIter last)
+template <typename Topology>
+node max_node(const Topology& t)
 {
 	std::vector<node> un;
-	unique_nodes(first, last, std::back_inserter(un));
+	unique_nodes(t, std::back_inserter(un));
 	return *std::max_element(begin(un), end(un));
 }
 
@@ -132,7 +140,7 @@ namespace detail {
             Stop stop,
             const WeightCmp& cmp) {
 
-        const node mn = max_node(edge_begin(t), edge_end(t));
+        const node mn = max_node(t);
 
 		out_preds.clear();
         out_dists.clear();
@@ -156,7 +164,7 @@ namespace detail {
             if (stop(u)) {
                 break;
             }
-			
+
             std::for_each(
                 out_begin(t, u),
                 out_end(t, u),
@@ -194,7 +202,7 @@ namespace detail {
             std::vector<typename Metric::weight_type>& out_dists,
             const WeightCmp& cmp) {
 
-        const node mn = max_node(edge_begin(t), edge_end(t));
+        const node mn = max_node(t);
 		const node N = nodes_count(t);
 
 		out_preds.clear();
