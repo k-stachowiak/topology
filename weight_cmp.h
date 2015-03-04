@@ -24,7 +24,7 @@ struct weight_cmp_index {
     static_assert(
         is_multiweight<MultiWeight>() && I >= 0 && I < MultiWeight::weight_count,
         "weight_cmp_index static assert");
-    
+
     bool operator()(const MultiWeight& x, const MultiWeight& y) const
     {
         return x[I] < y[I];

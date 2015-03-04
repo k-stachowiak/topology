@@ -6,6 +6,7 @@
 #include "algorithms_basic.h"
 #include "algorithms_larac.h"
 #include "algorithms_mlra.h"
+#include "algorithms_lbpsa.h"
 
 namespace {
 

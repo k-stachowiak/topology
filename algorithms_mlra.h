@@ -5,6 +5,8 @@
 
 namespace detail {
 
+    // void mlra_delete_leaves(...) { This is probably very rarely needed; if ever... }
+
 }
 
 template <class Graph, class Metric, class NodeIt>
