@@ -127,7 +127,7 @@ namespace {
     {
         using Weight = array_weight<double, 2>;
 
-        adj_list_graph g;
+        adj_list g;
         map_metric<Weight> m;
         fill_grid(
             g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 },
@@ -162,7 +162,7 @@ namespace {
 
         using Weight = array_weight<double, 2>;
 
-        adj_matrix_graph g;
+        adj_matrix g;
         map_metric<Weight, true> m;
 
         for_each_mpiech_weight([&g, &m](const edge& e, const Weight& w) {
@@ -178,7 +178,7 @@ namespace {
 
     void test_simple()
     {
-        adj_list_graph g;
+        adj_list g;
         prepare_wiki_graph(g);
 
         map_metric<double, true> m;
@@ -197,7 +197,7 @@ namespace {
     {
         using Weight = array_weight<double, 2>;
 
-        adj_matrix_graph g;
+        adj_matrix g;
         prepare_wiki_graph(g);
 
         map_metric<Weight, true> m;
@@ -217,7 +217,7 @@ namespace {
 
     void test_hop()
     {
-        adj_list_graph g;
+        adj_list g;
         prepare_wiki_graph(g);
 
         hop_metric<double> m;

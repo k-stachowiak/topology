@@ -1,5 +1,5 @@
-#ifndef PATH_H
-#define PATH_H
+#ifndef TOPOLOGY_PATH_H
+#define TOPOLOGY_PATH_H
 
 #if 0
 concept Path : Topology {

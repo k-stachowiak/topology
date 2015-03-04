@@ -20,8 +20,8 @@ concept Topology : Regular {
 }
 #endif
 
-#include "graph.h"
-#include "path.h"
-#include "tree.h"
+#include "topology_graph.h"
+#include "topology_path.h"
+#include "topology_tree.h"
 
 #endif

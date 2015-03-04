@@ -25,7 +25,7 @@ namespace {
             0, 1, 1, 0, 1, 0,
             0, 0, 0, 1, 0, 1,
             1, 0, 1, 0, 1, 0 };
-        adj_matrix_graph adj_mat;
+        adj_matrix adj_mat;
         fill_example_graph_bi(adj_mat);
         assert(adj_mat.matrix == expected_adj_mat);
 
@@ -36,7 +36,7 @@ namespace {
             { 1, 2, 4 },
             { 3, 5 },
             { 0, 2, 4 } };
-        adj_list_graph adj_list;
+        adj_list adj_list;
         fill_example_graph_bi(adj_list);
         assert(adj_list.adjacency == expected_adj_list);
     }

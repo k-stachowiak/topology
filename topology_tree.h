@@ -1,5 +1,5 @@
-#ifndef TREE_H
-#define TREE_H
+#ifndef TOPOLOGY_TREE_H
+#define TOPOLOGY_TREE_H
 
 #if 0
 concept Tree : Topology {
