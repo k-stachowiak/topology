@@ -3,6 +3,63 @@
 
 namespace detail {
 
+	path lbpsa_feasible_find(...)
+	{
+		using Weight = typename MultiWeight::weight_type;
+		int weight_count = MuliWeight::weight_count;
+
+		std::vector<double> lambdas { weight_count, 1.0 };
+		double UB = accumulate_cost(m, g);
+		double lk = 2.0;
+		double prevL = std::numeric_limits<double>::infinity;
+		int iterationsSinceLChange = 0;
+		int passes = 0;
+
+		while (true) {
+
+			auto lccmp = weight_cmp_lin_cmb<MultiWeight> { lambdas };
+
+			// Find and evaluate path.
+			// -----------------------
+			path p = dijkstra(g, m, from, to, llcmp);
+			if (!p.empty() && lbps_constraints_fulfilled(p, constraints)) {
+				upperBound = accumulate_cost(m, p);
+				return p;
+			}
+
+			// Iteration step.
+			// ---------------
+			double L = metricProvider.getPreAdditive(path);
+			int metric = getMaxIndex(path, constraints);
+			double step = computeStep(path, metric, lk, L, constraints);
+			lambdas.set(metric - 1, lambdas.get(metric - 1) + step);
+			if (lambdas.get(metric - 1) < 0.0) {
+				lambdas.set(metric - 1, 0.0);
+			}
+			// Purple magic.
+			// -------------
+			if (L == prevL) {
+				++iterationsSinceLChange;
+			} else {
+				iterationsSinceLChange = 0;
+				prevL = L;
+			}
+			if (iterationsSinceLChange >= 50) {
+				iterationsSinceLChange = 0;
+				lk *= 0.5;
+			}
+			if (++passes > 50) {
+				passes = 0;
+				lk *= 0.5;
+			}
+			if (lk < 0.125) {
+				break;
+			}
+		}
+		return null;
+	}
+
+	/*
     bool lbpsa_conditions(typename Metric::weight_type current_weight, node dst)
     {
         using Weight = typename Metric::weight_type;
@@ -95,12 +152,14 @@ namespace detail {
             current_weight = old_weight;
 		}
     }
+*/
 
 }
 
 template <class Graph, class Metric>
 path lbpsa(const Graph& g, const Metric& m, const std::vector<double>& cstr, node src, node dst)
 {
+	/*
     using Weight = typename Metric::weight_type;
 
     Weight wth = weight_traits<Weight>::zero();
@@ -117,6 +176,9 @@ path lbpsa(const Graph& g, const Metric& m, const std::vector<double>& cstr, nod
             return accumulate_weight(m, x) < accumulate_weight(m, y);
         });
     }
+	*/
+
+	return {};
 }
 
 #endif

@@ -45,6 +45,13 @@ typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& 
 		[&m](const Weight& w, const edge& e) { return w + m(e); });
 }
 
+template <class Metric, class Topology>
+double accumulate_cost(const Metric& m, const Topology& t)
+{
+	double result = 0;
+	return accumulate_edge(t, 0.0, [&m](double cost, const edge& e) { return cost + m(e)[0]; });
+}
+
 template <typename Topology, typename Out>
 void unique_nodes(const Topology& t, Out out_begin)
 {
