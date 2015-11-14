@@ -7,10 +7,13 @@ concept Tree : Topology {
 }
 #endif
 
+/// The structure representin a tree, i.e. a topological structure in which
+/// between each pair of nodes exists exactly one path.
 struct tree {
 
     std::multimap<node, node> m_impl;
 
+    /// The iterator enabling visiting all the neighbors of the given node.
     struct out_iterator : std::iterator<std::forward_iterator_tag, node> {
 
         typedef std::multimap<node, node>::const_iterator impl_type;
@@ -28,6 +31,15 @@ struct tree {
         out_iterator(out_iterator&&) = default;
         out_iterator& operator=(const out_iterator&) = default;
         out_iterator& operator=(out_iterator&&) = default;
+
+        // Custom constructor.
+        out_iterator(bool has_children, bool at_parent, node parent, node current, impl_type current_child) :
+            has_children { has_children },
+            at_parent { at_parent },
+            parent { parent },
+            current { current },
+            current_child { current_child }
+        {}
 
         // Regular:
         friend bool operator==(const out_iterator& x, const out_iterator& y)
@@ -50,16 +62,7 @@ struct tree {
             return !(x == y);
         }
 
-        // Custom constructor.
-        out_iterator(bool has_children, bool at_parent, node parent, node current, impl_type current_child) :
-            has_children { has_children },
-            at_parent { at_parent },
-            parent { parent },
-            current { current },
-            current_child { current_child }
-        {}
-
-        // Iterator specific operations.
+        // Forward iterator:
         out_iterator& operator++()
         {
             if (at_parent) {
@@ -87,6 +90,7 @@ struct tree {
         }
     };
 
+    /// Iterator enabling traversing all the edges in a given structure.
     struct const_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
 
         typedef std::multimap<node, node>::const_iterator impl_type;
@@ -101,6 +105,9 @@ struct tree {
         const_edge_iterator& operator=(const const_edge_iterator&) = default;
         const_edge_iterator& operator=(const_edge_iterator&&) = default;
 
+        // Custom constructor.
+        const_edge_iterator(impl_type current) : current { current } {}
+
         // Regular:
         friend bool operator==(const const_edge_iterator& x, const const_edge_iterator& y)
         {
@@ -112,10 +119,7 @@ struct tree {
             return !(x == y);
         }
 
-        // Custom constructor.
-        const_edge_iterator(impl_type current) : current { current } {}
-
-        // Iterator specific operations.
+        // Forward iterator:
         const_edge_iterator& operator++()
         {
             ++current;
@@ -136,6 +140,7 @@ struct tree {
     };
 
     // Semiregular: by default
+
     // Regular:
     friend bool operator==(const tree& x, const tree& y)
     {

@@ -25,7 +25,7 @@ namespace {
         x(edge(1, 2)) = 1;
         x(edge(2, 1)) = 2;
         y(edge(1, 2)) = x(edge { 1, 2 } );
-        assert(x != y);                   
+        assert(x != y);
         y(edge(2, 1)) = x(edge { 2, 1 } );
         assert(x == y);
 

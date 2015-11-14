@@ -39,10 +39,10 @@ T accumulate_edge(const Topology& t, const T zero, Op op)
 template <class Metric, class Topology>
 typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& t)
 {
-    using Weight = typename Metric::weight_type;
+    using W = typename Metric::weight_type;
 	return accumulate_edge(t,
-		weight_traits<Weight>::zero(),
-		[&m](const Weight& w, const edge& e) { return w + m(e); });
+		weight_traits<W>::zero(),
+		[&m](const W& w, const edge& e) { return w + m(e); });
 }
 
 template <class Metric, class Topology>

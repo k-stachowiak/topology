@@ -7,23 +7,34 @@ concept Graph : Topology {
 }
 #endif
 
+/// Adjacency list implementation of the topological structure.
+/// In general this is a sequence of sequences of node identifiers.
+/// Therefore if we have an adjacency list object x then x[a] is a sequence
+/// of all the nodes that are connected to the node a.
+/// This structure is advantageous in case of sparse structures.
 struct adj_list {
 
-    std::deque<std::deque<node>> adjacency;
+    std::vector<std::vector<node>> adjacency;
 
+    /// The object enabling iteraton over the topological structure edges.
+    /// This type is needed here, because the adjacency list is defined
+    /// in terms of nodes and no internal structure represents the edges list.
     struct const_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
 
         const adj_list *graph;
         int nd, adj;
 
+        // Custom constructor
+        const_edge_iterator(const adj_list *g, int n, int a) : graph { g }, nd { n }, adj { a } {}
+
+        // Semiregular:
         const_edge_iterator() : graph { nullptr }, nd { -1 }, adj { -1 } {}
         const_edge_iterator(const const_edge_iterator&) = default;
         const_edge_iterator(const_edge_iterator&&) = default;
         const_edge_iterator& operator=(const const_edge_iterator&) = default;
         const_edge_iterator& operator=(const_edge_iterator&&) = default;
 
-        const_edge_iterator(const adj_list *g, int n, int a) : graph { g }, nd { n }, adj { a } {}
-
+        // Regular:
         friend bool operator==(const const_edge_iterator& x, const const_edge_iterator& y)
         {
             return x.graph == y.graph && x.nd == y.nd && x.adj == y.adj;
@@ -34,6 +45,7 @@ struct adj_list {
             return !(x == y);
         }
 
+        // Forward Iterator:
         const_edge_iterator& operator++()
         {
             if (++adj == static_cast<int>(graph->adjacency.at(nd).size())) {
@@ -62,6 +74,7 @@ struct adj_list {
     };
 
     // Semiregular: by default
+
     // Regular:
     friend bool operator==(const adj_list& x, const adj_list& y)
     {
@@ -73,7 +86,7 @@ struct adj_list {
         return !(x == y);
     }
 
-    // Operations:
+    // Graph operations:
     void set(const edge& e)
     {
         node from = e.first;
@@ -84,6 +97,7 @@ struct adj_list {
         adjacency[from].push_back(to);
     }
 
+    // Topology operations:
     friend int nodes_count(const adj_list& g)
     {
         std::vector<node> nodes;
@@ -100,12 +114,12 @@ struct adj_list {
         return std::distance(begin(nodes), std::unique(begin(nodes), end(nodes)));
     }
 
-    friend std::deque<node>::const_iterator out_begin(const adj_list& g, node x)
+    friend std::vector<node>::const_iterator out_begin(const adj_list& g, node x)
     {
         return g.adjacency[x].begin();
     }
 
-    friend std::deque<node>::const_iterator out_end(const adj_list& g, node x)
+    friend std::vector<node>::const_iterator out_end(const adj_list& g, node x)
     {
         return g.adjacency[x].end();
     }
@@ -121,14 +135,23 @@ struct adj_list {
     }
 };
 
+/// Adjacency matrix is the implementation of a topological structure that
+/// stores the two dimentional array of boolean flags indicating for each
+/// position (a, b) whether an edge exists between nodes a and b.
+/// This type of implementation gives a terse representation of the structure
+/// and is advised for the representation of the dense graphs.
 struct adj_matrix {
 
-    std::deque<bool> matrix;
+    std::vector<bool> matrix;
     int nodes;
 
+    /// The iterator enabling iteration over the set of neighbors of the given
+    /// node. In the case of the adjacency matrix this type of iterator needs
+    /// to traverse a particular row of adjacency matrix skipping the empty
+    /// entries.
     struct out_iterator : std::iterator<std::forward_iterator_tag, node> {
 
-        typedef std::deque<bool>::const_iterator impl_type;
+        typedef std::vector<bool>::const_iterator impl_type;
 
         impl_type first, last;
         impl_type current;
@@ -141,6 +164,12 @@ struct adj_matrix {
         out_iterator& operator=(const out_iterator&) = default;
         out_iterator& operator=(out_iterator&&) = default;
 
+        // Custom constructor.
+        out_iterator(impl_type first, impl_type last) :
+            first { first }, last { last }, current { first }
+        {}
+
+        // Regular:
         friend bool operator==(const out_iterator& x, const out_iterator& y)
         {
             return x.current == y.current;
@@ -151,12 +180,7 @@ struct adj_matrix {
             return !(x == y);
         }
 
-        // Custom constructor.
-        out_iterator(impl_type first, impl_type last) :
-            first { first }, last { last }, current { first }
-        {}
-
-        // Iterator specific operations.
+        // Forward iterator.
         out_iterator& operator++()
         {
             current = std::find(current + 1, last, true);
@@ -176,19 +200,23 @@ struct adj_matrix {
         }
     };
 
+    /// The iterator enabling visitin all the edges in the given structure.
     struct const_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
 
         const adj_matrix *graph;
         int u, v;
 
+        // Semiregular:
         const_edge_iterator() : graph { nullptr }, u { -1 }, v { -1 } {}
         const_edge_iterator(const const_edge_iterator&) = default;
         const_edge_iterator(const_edge_iterator&&) = default;
         const_edge_iterator& operator=(const const_edge_iterator&) = default;
         const_edge_iterator& operator=(const_edge_iterator&&) = default;
 
+        // Custom constructor:
         const_edge_iterator(const adj_matrix *g, int u, int v) : graph { g }, u { u }, v { v } {}
 
+        // Regular:
         friend bool operator==(const const_edge_iterator& x, const const_edge_iterator& y)
         {
             return x.graph == y.graph && x.u == y.u && x.v == y.v;
@@ -199,6 +227,7 @@ struct adj_matrix {
             return !(x == y);
         }
 
+        // Forward iterator:
         const_edge_iterator& operator++()
         {
             int N = nodes_count(*graph);
@@ -236,6 +265,7 @@ struct adj_matrix {
     adj_matrix& operator=(const adj_matrix& x) = default;
     adj_matrix& operator=(adj_matrix&& x) = default;
 
+    // Custom constructor:
     template <typename I>
     adj_matrix(I first, I last) : matrix{ first, last }
     {
@@ -255,7 +285,7 @@ struct adj_matrix {
         return !(x == y);
     }
 
-    // Operations:
+    // Graph operations:
     void set(const edge& e)
     {
         node from = e.first;
@@ -268,7 +298,7 @@ struct adj_matrix {
         }
 
         int new_nodes = max_index + 1;
-        std::deque<bool> new_matrix(new_nodes * new_nodes, false);
+        std::vector<bool> new_matrix(new_nodes * new_nodes, false);
 
         for (int f = 0; f < nodes; ++f) {
             for (int t = 0; t < nodes; ++t) {
@@ -282,6 +312,7 @@ struct adj_matrix {
         matrix = std::move(new_matrix);
     }
 
+    // Topology operations:
     friend int nodes_count(const adj_matrix& g)
     {
         return g.nodes;

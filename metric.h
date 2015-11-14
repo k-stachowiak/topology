@@ -8,7 +8,7 @@
 
 #if 0
 
-concept Metric : Regular {
+concept Metric<Weight> : Regular {
     Weight& operator()(edge);
 };
 
@@ -16,12 +16,10 @@ concept Metric : Regular {
 
 /// Metric which will return Weight(1) for any Link.
 /// @tparam Weight A Weight.
-///
-template <class Weight>
+template <Weight W>
 struct hop_metric {
 
-    // Helper typedef.
-    typedef Weight weight_type;
+    typedef W weight_type;
 
     // Semiregular: by default.
 
@@ -29,10 +27,10 @@ struct hop_metric {
     friend bool operator==(const hop_metric& x, const hop_metric& y) { return true; }
     friend bool operator!=(const hop_metric& x, const hop_metric& y) { return !(x == y); }
 
-    // Operations:
+    // Metric operations:
     weight_type operator()(const edge&) const
     {
-        return weight_traits<Weight>::one();
+        return weight_traits<W>::one();
     }
 };
 
@@ -40,15 +38,13 @@ struct hop_metric {
 ///
 /// @tparam Weight An underlying Wieght.
 /// @bidirectional A flag indicating if the map lookup should be uni- or bi- directional.
-///
-template <class Weight, bool bidirectional = false>
+template <Weight W, bool bidirectional = false>
 class map_metric {
 
-    // Implementation
-    std::map<edge, Weight> m_impl;
+    std::map<edge, W> m_impl;
 
 public:
-    typedef Weight weight_type;
+    typedef W weight_type;
 
     // Semiregular: by default.
 
@@ -88,7 +84,7 @@ public:
 
     friend bool operator!=(const map_metric& x, const map_metric& y) { return !(x == y); }
 
-    // Operations:
+    // Metric operations:
     const weight_type& operator()(const edge& e) const
     {
         return bidirectional

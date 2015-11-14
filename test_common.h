@@ -69,9 +69,9 @@ void print(const T& x)
 }
 
 template <class T>
-void print(const std::deque<T>& d)
+void print(const std::vector<T>& d)
 {
-    std::cout << "deq(" << d.size() << ") : ";
+    std::cout << "vec(" << d.size() << ") : ";
     for (const auto& x : d) {
         print(x);
     }

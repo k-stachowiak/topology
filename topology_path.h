@@ -8,9 +8,15 @@ concept Path : Topology {
 }
 #endif
 
+/// The path type is implemented in terms of a double ended queue.
+/// This implementation implicitly provides the operations defined for the path
+/// concept. The remaining operations (e.g. for the Topololgy concept) are
+/// implemented here, in terms of free standing functions.
 using path = std::deque<node>;
 
+/// Iterator enabling visiting the neighbors of a given node.
 struct path_out_iterator : std::iterator<std::forward_iterator_tag, node> {
+
 	enum Phase {
 		FIRST, SECOND, END
 	} phase = FIRST;
@@ -23,6 +29,11 @@ struct path_out_iterator : std::iterator<std::forward_iterator_tag, node> {
 	path_out_iterator(path_out_iterator&&) = default;
 	path_out_iterator& operator=(const path_out_iterator&) = default;
 	path_out_iterator& operator=(path_out_iterator&&) = default;
+
+	// Custom constructor:
+	path_out_iterator(Phase phase, node first, node second) :
+		phase { phase }, first { first }, second { second }
+	{}
 
 	// Regular:
 	friend bool operator==(const path_out_iterator& x, const path_out_iterator& y)
@@ -47,11 +58,6 @@ struct path_out_iterator : std::iterator<std::forward_iterator_tag, node> {
 	{
 		return !(x == y);
 	}
-
-	// Custom constructor:
-	path_out_iterator(Phase phase, node first, node second) :
-		phase { phase }, first { first }, second { second }
-	{}
 
 	// Iterator specific operations:
 	path_out_iterator& operator++()
@@ -89,19 +95,23 @@ struct path_out_iterator : std::iterator<std::forward_iterator_tag, node> {
 	}
 };
 
+/// Iterator enabling visiting all the edges in a given path.
 struct const_path_edge_iterator : std::iterator<std::forward_iterator_tag, edge> {
 
     const path *p;
     int i;
 
+    // Semiregular:
     const_path_edge_iterator() : p { nullptr }, i { -1 } {}
     const_path_edge_iterator(const const_path_edge_iterator&) = default;
     const_path_edge_iterator(const_path_edge_iterator&&) = default;
     const_path_edge_iterator& operator=(const const_path_edge_iterator&) = default;
     const_path_edge_iterator& operator=(const_path_edge_iterator&&) = default;
 
+    // Custom constructor:
     const_path_edge_iterator(const path *p, int i) : p { p }, i { i } {}
 
+    // Regular:
     friend bool operator==(const const_path_edge_iterator& x, const const_path_edge_iterator& y)
     {
         return x.p == y.p && x.i == y.i;
@@ -112,6 +122,7 @@ struct const_path_edge_iterator : std::iterator<std::forward_iterator_tag, edge>
         return !(x == y);
     }
 
+    // Forward iterator:
     const_path_edge_iterator& operator++()
     {
         ++i;
@@ -131,6 +142,7 @@ struct const_path_edge_iterator : std::iterator<std::forward_iterator_tag, edge>
     }
 };
 
+// Topology operations:
 inline int nodes_count(const path &p)
 {
     return p.size();

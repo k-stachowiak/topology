@@ -9,39 +9,31 @@ concept WeightCmp<Weight> : Functor {
 
 #endif
 
-template <typename Weight>
+template <Weight W>
 struct weight_cmp_less {
-    static_assert(is_weight<Weight>(), "weight_cmp_less static assert");
-    bool operator()(const Weight& x, const Weight& y)
+    bool operator()(const W& x, const W& y)
     {
         return x < y;
     }
 };
 
-template <class MultiWeight, int I>
+template <MultiWeight MW, int I>
 struct weight_cmp_index {
-
-    static_assert(
-        is_multiweight<MultiWeight>() && I >= 0 && I < MultiWeight::weight_count,
-        "weight_cmp_index static assert");
-
-    bool operator()(const MultiWeight& x, const MultiWeight& y) const
+    bool operator()(const MW& x, const MW& y) const
     {
         return x[I] < y[I];
     }
 };
 
-template <class MultiWeight>
-using weight_cmp_cost = weight_cmp_index<MultiWeight, 0>;
+template <MultiWeight MW>
+using weight_cmp_cost = weight_cmp_index<MW, 0>;
 
-template <class MultiWeight>
+template <class MW>
 class weight_cmp_lin_cmb {
 
-    static_assert(is_multiweight<MultiWeight>(), "weight_cmp_lin_cmb static assert");
-
-    using Weight = typename MultiWeight::weight_type;
+    using W = typename MW::weight_type;
     enum {
-        weight_count = MultiWeight::weight_count,
+        weight_count = MW::weight_count,
         coef_count = weight_count
     };
 
@@ -55,9 +47,9 @@ class weight_cmp_lin_cmb {
         std::copy(begin, end, m_coefficients.begin());
     }
 
-    Weight aggregate(const MultiWeight& x) const
+    W aggregate(const MW& x) const
     {
-        Weight result = weight_traits<Weight>::zero();
+        W result = weight_traits<W>::zero();
         for (int i = 0; i < coef_count; ++i) {
             result += x[i] * m_coefficients[i];
         }
@@ -76,22 +68,18 @@ public:
         init_from_iter(coefficients.begin(), coefficients.end());
     }
 
-    bool operator()(const MultiWeight& x, const MultiWeight& y) const
+    bool operator()(const MW& x, const MW& y) const
     {
         return aggregate(x) < aggregate(y);
     }
 };
 
-template <class MultiWeight>
+template <MultiWeight MW>
 class weight_cmp_lagrange {
 
-    static_assert(
-        is_multiweight<MultiWeight>() && MultiWeight::weight_count > 1,
-        "weight_cmp_lagrange static assert");
-
-    using Weight = typename MultiWeight::weight_type;
+    using W = typename MW::weight_type;
     enum {
-        weight_count = MultiWeight::weight_count,
+        weight_count = MW::weight_count,
         coef_count = weight_count - 1,
         constr_count = coef_count
     };
@@ -112,9 +100,9 @@ class weight_cmp_lagrange {
         std::copy(constr_begin, constr_end, begin(m_constraints));
     }
 
-    Weight aggregate(const MultiWeight& x) const
+    W aggregate(const MW& x) const
     {
-        Weight result = x[0];
+        W result = x[0];
         for (int i = 1; i < coef_count; ++i) {
             result += (x[i] - m_constraints[i - 1]) * m_coefficients[i - 1];
         }
@@ -130,7 +118,7 @@ public:
         init_from_iters(coef_begin, coef_end, constr_begin, constr_end);
     }
 
-    bool operator()(const MultiWeight& x, const MultiWeight& y) const
+    bool operator()(const MW& x, const MW& y) const
     {
         return aggregate(x) < aggregate(y);
     }

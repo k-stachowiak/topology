@@ -15,54 +15,49 @@
 
 #if 0
 
-concept Weight = arithmetic
+concept Weight : Regular {
+    static self operator+(self, self);
+    // Essentially weight forms an additive semigroup over the set of the real
+    // numbers. Note that the order is not required for the weight concept as
+    // the less then is to be provided ad-hoc by the client.
+};
 
-concept MultiWeight<Weight> {
-    static MultiWeight operator+(MultiWeight, MultiWeight);
+concept MultiWeight<Weight> : Weight {
     Weight operator[](int);
     ForwardIterator<Weight> begin();
     ForwardIterator<Weight> end();
+    // The multi-weight may be used just as the weight, but
+    // it additionally provides tools for the introspection
+    // of its components.
 };
 
 #endif
 
-template <class T>
-constexpr bool is_weight()
-{
-    return std::is_arithmetic<T>::value;
-}
-
-template <class T>
-constexpr bool is_multiweight()
-{
-    // TODO: add missing assertions
-    return is_regular<T>();
-}
+#define Weight typename
+#define MultiWeight typename
 
 /// Array of weights.
 /// The difference between the array_weight and std::array lies in the definition
 /// of the +operator.
 ///
-/// @tparam T Underlying Weight
+/// @tparam W Underlying Weight
 /// @tparam M Natural+ number indicating the count of the aggregated weights
 ///
-template <typename Weight, int M>
+template <Weight W, int M>
 struct array_weight {
 
-    typedef Weight weight_type;
-    enum { weight_count = M };
+    typedef W weight_type;
+    static const int weight_count = M;
 
-    static_assert(M > 0 && is_weight<Weight>(), "array_weight template arguments assertion.");
-
-    std::array<Weight, M> m_impl;
+    std::array<W, M> m_impl;
     typedef typename decltype(m_impl)::iterator iterator;
     typedef typename decltype(m_impl)::const_iterator const_iterator;
 
     // Custom constructors:
-    array_weight(std::initializer_list<Weight> l)
+    array_weight(std::initializer_list<W> l)
     {
-        std::copy(l.begin(), l.end(), m_impl.begin());
         assert(l.size() == M);
+        std::copy(l.begin(), l.end(), m_impl.begin());
     }
 
     template <class Container>
@@ -75,11 +70,8 @@ struct array_weight {
     array_weight() = default;
     array_weight(const array_weight& x) = default;
     array_weight(array_weight&& x) : m_impl(x.m_impl) {}
-    array_weight& operator=(const array_weight& x) = default;
-    array_weight& operator=(array_weight&& x) {
-        m_impl = std::move(x.m_impl);
-        return *this;
-    }
+    array_weight& operator=(const array_weight& x) noexcept = default;
+    array_weight& operator=(array_weight&& x) noexcept = default;
 
     // Regular:
     friend bool operator==(const array_weight& x, const array_weight& y) { return x.m_impl == y.m_impl; }
@@ -95,7 +87,7 @@ struct array_weight {
     }
 
     // MultiWeight operations:
-    const Weight operator[](int index) const { return m_impl[index]; }
+    const W& operator[](int index) const { return m_impl[index]; }
     iterator begin() { return m_impl.begin(); }
     const_iterator begin() const { return m_impl.begin(); }
     iterator end() { return m_impl.end(); }

@@ -3,9 +3,10 @@
 
 namespace detail {
 
+    /*
 	path lbpsa_feasible_find(...)
 	{
-		using Weight = typename MultiWeight::weight_type;
+		using W = typename MultiWeight::weight_type;
 		int weight_count = MuliWeight::weight_count;
 
 		std::vector<double> lambdas { weight_count, 1.0 };
@@ -59,11 +60,11 @@ namespace detail {
 		return null;
 	}
 
-	/*
+    template <class Metric>
     bool lbpsa_conditions(typename Metric::weight_type current_weight, node dst)
     {
-        using Weight = typename Metric::weight_type;
-        Weight previous_weight = frasible_costs[dst];
+        using W = typename Metric::weight_type;
+        W previous_weight = frasible_costs[dst];
 
 		// Other.
 		// ------
@@ -121,7 +122,7 @@ namespace detail {
             path &current_path,
             std::vector<path> &feasible)
     {
-        using Weight = typename Metric::weight_type;
+        using W = typename Metric::weight_type;
 
         node u = current_path.back();
 
@@ -142,7 +143,7 @@ namespace detail {
 
 			edge e { u, v };
 
-            Weight old_weight = current_weight;
+            W old_weight = current_weight;
             current_weight = old_weight + m(e);
 			if (detail::lbpsa_conditions(e)) {
 				currentPath.push_back(v);
@@ -152,17 +153,17 @@ namespace detail {
             current_weight = old_weight;
 		}
     }
-*/
 
+    */
 }
 
 template <class Graph, class Metric>
 path lbpsa(const Graph& g, const Metric& m, const std::vector<double>& cstr, node src, node dst)
 {
-	/*
-    using Weight = typename Metric::weight_type;
+    /*
+    using W = typename Metric::weight_type;
 
-    Weight wth = weight_traits<Weight>::zero();
+    W wth = weight_traits<W>::zero();
     path res { dst };
     std::vector<path> fsbl;
 
@@ -176,8 +177,8 @@ path lbpsa(const Graph& g, const Metric& m, const std::vector<double>& cstr, nod
             return accumulate_weight(m, x) < accumulate_weight(m, y);
         });
     }
-	*/
 
+    */
 	return {};
 }
 

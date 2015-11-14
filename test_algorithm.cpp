@@ -10,12 +10,12 @@
 
 namespace {
 
-    template <class Graph, class Metric, class Weight>
+    template <class Graph, class Metric, Weight W>
     void fill_grid(
             Graph& g, Metric& m,
             int width, int height,
-            const Weight& cheap_weight,
-            const Weight& exp_weight,
+            const W& cheap_weight,
+            const W& exp_weight,
             const std::vector<edge>& cheap_edges)
     {
         // Edges + expensive weights.
@@ -126,12 +126,12 @@ namespace {
 
     void test_mlra()
     {
-        using Weight = array_weight<double, 2>;
+        using W = array_weight<double, 2>;
 
         adj_list g;
-        map_metric<Weight> m;
+        map_metric<W> m;
         fill_grid(
-            g, m, 3, 3, Weight { 1.0, 10.0 }, Weight { 100.0, 1000.0 },
+            g, m, 3, 3, W { 1.0, 10.0 }, W { 100.0, 1000.0 },
             { { 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 } });
 
         node src = 3;
@@ -161,12 +161,12 @@ namespace {
         // c2 = 503
         // d2 = 1000
 
-        using Weight = array_weight<double, 2>;
+        using W = array_weight<double, 2>;
 
         adj_matrix g;
-        map_metric<Weight, true> m;
+        map_metric<W, true> m;
 
-        for_each_mpiech_weight([&g, &m](const edge& e, const Weight& w) {
+        for_each_mpiech_weight([&g, &m](const edge& e, const W& w) {
 			g.set(e); g.set(reverse(e));
 			m(e) = w; m(reverse(e)) = w;
 		});
@@ -196,21 +196,21 @@ namespace {
 
     void test_multi()
     {
-        using Weight = array_weight<double, 2>;
+        using W = array_weight<double, 2>;
 
         adj_matrix g;
         prepare_wiki_graph(g);
 
-        map_metric<Weight, true> m;
+        map_metric<W, true> m;
         for_each_example_metric_dbl([&m](const edge& e, double val) {
-            m(e) = Weight { 10 * val, val };
-            m(reverse(e)) = Weight { 10 * val, val };
+            m(e) = W { 10 * val, val };
+            m(reverse(e)) = W { 10 * val, val };
         });
 
         path expected_p { 0, 2, 5, 4 };
 
-        path pd = dijkstra(g, m, 0, 4, weight_cmp_cost<Weight> {});
-        path pb = bellman_ford(g, m, 0, 4, weight_cmp_cost<Weight> {});
+        path pd = dijkstra(g, m, 0, 4, weight_cmp_cost<W> {});
+        path pb = bellman_ford(g, m, 0, 4, weight_cmp_cost<W> {});
 
         assert(pd == expected_p);
         assert(pb == expected_p);

@@ -12,7 +12,7 @@ namespace detail {
 template <class Graph, class Metric, class NodeIt>
 tree mlra(const Graph& g, const Metric& m, double constraint, node src, NodeIt dst_begin, NodeIt dst_end)
 {
-    using Weight = typename Metric::weight_type;
+    using W = typename Metric::weight_type;
 
     tree result;
 
@@ -29,7 +29,7 @@ tree mlra(const Graph& g, const Metric& m, double constraint, node src, NodeIt d
         }
     }
 
-    result = prim(result, m, src, weight_cmp_cost<Weight> {});
+    result = prim(result, m, src, weight_cmp_cost<W> {});
     // result = detail::mlra_delete_leaves(result, dst_begin, dst_end);
 
     return result;

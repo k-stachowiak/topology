@@ -12,11 +12,11 @@
 
 #if 0
 concept Topology : Regular {
-    static NaturalZero nodes_count(Topology);
-    static ForwardIterator<node> out_begin(Topology, node);
-    static ForwardIterator<node> out_end(Topology, node);
-    static ForwardIterator<edge> edge_begin(Topology);
-    static ForwardIterator<edge> edge_end(Topology);
+    static NaturalZero nodes_count(self);
+    static ForwardIterator<node> out_begin(self, node);
+    static ForwardIterator<node> out_end(self, node);
+    static ForwardIterator<edge> edge_begin(self);
+    static ForwardIterator<edge> edge_end(self);
 }
 #endif
 

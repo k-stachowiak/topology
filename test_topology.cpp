@@ -18,7 +18,7 @@ namespace {
 
     void initialization_test()
     {
-        std::deque<bool> expected_adj_mat {
+        std::vector<bool> expected_adj_mat {
             0, 1, 1, 0, 0, 1,
             1, 0, 1, 1, 0, 0,
             1, 1, 0, 1, 0, 1,
@@ -29,7 +29,7 @@ namespace {
         fill_example_graph_bi(adj_mat);
         assert(adj_mat.matrix == expected_adj_mat);
 
-        std::deque<std::deque<node>> expected_adj_list {
+        std::vector<std::vector<node>> expected_adj_list {
             { 1, 2, 5 },
             { 0, 2, 3 },
             { 0, 1, 3, 5 },
