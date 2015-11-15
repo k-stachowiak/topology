@@ -41,15 +41,15 @@ namespace {
         assert(adj_list.adjacency == expected_adj_list);
     }
 
-	void non_graph_path_finding_test()
-	{
-		hop_metric<int> m;
+    void non_graph_path_finding_test()
+    {
+        hop_metric<int> m;
 
-		path p { 1, 2, 3, 4, 5 };
-		path expected_presult { 4, 3, 2 };
-		path presult = dijkstra(p, m, 4, 2);
+        path p { 1, 2, 3, 4, 5 };
+        path expected_presult { 4, 3, 2 };
+        path presult = dijkstra(p, m, 4, 2);
 
-		assert(expected_presult == presult);
+        assert(expected_presult == presult);
 
         tree t { {
             { 0, 1 }, { 0, 2 },
@@ -59,13 +59,13 @@ namespace {
         path tresult = dijkstra(t, m, 6, 3);
 
         assert(expected_tresult == tresult);
-	}
+    }
 
 }
 
 void test_topology()
 {
     initialization_test();
-	non_graph_path_finding_test();
+    non_graph_path_finding_test();
 }
 

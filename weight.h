@@ -15,25 +15,45 @@
 
 #if 0
 
+/// Essentially weight forms an additive semigroup over the set of the real
+/// numbers. Note that the order is not required for the weight concept as
+/// the less then is to be provided ad-hoc by the client.
 concept Weight : Regular {
     static self operator+(self, self);
-    // Essentially weight forms an additive semigroup over the set of the real
-    // numbers. Note that the order is not required for the weight concept as
-    // the less then is to be provided ad-hoc by the client.
 };
 
+/// The multi-weight may be used just as the weight, but it additionally
+/// provides tools for the introspection of its components.
 concept MultiWeight<Weight> : Weight {
+    typename Weight weight_type;
+    static const int weight_count;
     Weight operator[](int);
     ForwardIterator<Weight> begin();
     ForwardIterator<Weight> end();
-    // The multi-weight may be used just as the weight, but
-    // it additionally provides tools for the introspection
-    // of its components.
+};
+
+/// Provides basic values for the algorithms to operate on the custom weights.
+concept WeightTraits<T> {
+    static T inf();
+    static T zero();
+    static T one();
 };
 
 #endif
 
+///////////////////////////////////////////////////////////////////////////////
+// Weight
+///////////////////////////////////////////////////////////////////////////////
+
 #define Weight typename
+
+// Weight concept is fulfilled by built-in numeric types and therefore there
+// has not yet been a necessity to implement a user defined type for this.
+
+///////////////////////////////////////////////////////////////////////////////
+// MultiWeight
+///////////////////////////////////////////////////////////////////////////////
+
 #define MultiWeight typename
 
 /// Array of weights.
@@ -94,13 +114,9 @@ struct array_weight {
     const_iterator end() const { return m_impl.end(); }
 };
 
-#if 0
-concept WeightTraits<T> {
-    static T inf();
-    static T zero();
-    static T one();
-};
-#endif
+///////////////////////////////////////////////////////////////////////////////
+// Weight traits
+///////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
 struct weight_traits {

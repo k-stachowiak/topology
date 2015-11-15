@@ -24,7 +24,7 @@ tree mlra(const Graph& g, const Metric& m, double constraint, node src, NodeIt d
         } else {
             std::for_each(edge_begin(p), edge_end(p), [&result](const edge& e) {
                 result.set(e);
-				result.set(reverse(e));
+                result.set(reverse(e));
             });
         }
     }

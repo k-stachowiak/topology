@@ -1,6 +1,6 @@
 #include "test_common.h"
 #include "metric.h"
-#include "weight_cmp.h"
+#include "weight_util.h"
 #include "topology.h"
 
 #include "algorithms_basic.h"
@@ -65,11 +65,11 @@ namespace {
         for (int w = 0; w < (width - 1); ++w) {
             edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
 
-			g.set(e);
-			g.set(reverse(e));
+            g.set(e);
+            g.set(reverse(e));
 
-			m(e) = exp_weight;
-			m(reverse(e)) = exp_weight;
+            m(e) = exp_weight;
+            m(reverse(e)) = exp_weight;
         }
 
         // o    o (right edges)
@@ -79,11 +79,11 @@ namespace {
         for (int w = 0; w < (width - 1); ++w) {
             edge e = { coords_to_node(w, height - 1), coords_to_node(w + 1, height - 1) };
 
-			g.set(e);
-			g.set(reverse(e));
+            g.set(e);
+            g.set(reverse(e));
 
-			m(e) = exp_weight;
-			m(reverse(e)) = exp_weight;
+            m(e) = exp_weight;
+            m(reverse(e)) = exp_weight;
         }
 
         // Cheap weights.
@@ -120,7 +120,7 @@ namespace {
     {
         for_each_example_metric_dbl([&g](const edge& e, double) {
             g.set(e);
-			g.set(reverse(e));
+            g.set(reverse(e));
         });
     }
 
@@ -137,11 +137,11 @@ namespace {
         node src = 3;
         std::vector<node> dst { 2, 5, 8 };
         tree t = mlra(g, m, 10000, src, begin(dst), end(dst));
-		tree expected_tree {{
-			{ 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 }
-		}};
+        tree expected_tree {{
+            { 3, 4 }, { 4, 2 }, { 4, 5 }, { 4, 8 }
+        }};
 
-		assert(t == expected_tree);
+        assert(t == expected_tree);
     }
 
     void test_larac()
@@ -167,9 +167,9 @@ namespace {
         map_metric<W, true> m;
 
         for_each_mpiech_weight([&g, &m](const edge& e, const W& w) {
-			g.set(e); g.set(reverse(e));
-			m(e) = w; m(reverse(e)) = w;
-		});
+            g.set(e); g.set(reverse(e));
+            m(e) = w; m(reverse(e)) = w;
+        });
 
         path expected_p { 0, 6, 4, 7 };
         path p = larac(g, m, 1000.0, 0, 7);

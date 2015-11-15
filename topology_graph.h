@@ -49,9 +49,9 @@ struct adj_list {
         const_edge_iterator& operator++()
         {
             if (++adj == static_cast<int>(graph->adjacency.at(nd).size())) {
-				do {
+                do {
                     ++nd;
-				} while (nd != (int)graph->adjacency.size() && !graph->adjacency.at(nd).size());
+                } while (nd != (int)graph->adjacency.size() && !graph->adjacency.at(nd).size());
                 adj = 0;
             }
             return *this;
@@ -157,7 +157,7 @@ struct adj_matrix {
         impl_type current;
 
         // Semiregular:
-		~out_iterator() = default;
+        ~out_iterator() = default;
         out_iterator() = default;
         out_iterator(const out_iterator&) = default;
         out_iterator(out_iterator&&) = default;

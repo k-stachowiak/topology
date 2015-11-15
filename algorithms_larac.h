@@ -47,7 +47,7 @@ path larac(const Graph& g, const Metric& m, double constraint, node src, node ds
 
         double lambda = (cpc - cpd) / (dpd - dpc);
 
-        auto lccmp = weight_cmp_lin_cmb<MW> { 1.0, lambda }; // 1 * cost + lambda * delay
+        weight_cmp_aggr<MW, weight_aggr_lincmb<MW>> lccmp {{{ 1.0, lambda }}}; // 1 * cost + lambda * delay
         path np = dijkstra(g, m, src, dst, lccmp);
         auto np_weight = accumulate_weight(m, np);
 

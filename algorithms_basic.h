@@ -29,52 +29,52 @@ bool all_equal(const T& x, const T& y, const Tail&... tail) {
 template <class Topology, typename T, typename Op>
 T accumulate_edge(const Topology& t, const T zero, Op op)
 {
-	T result = zero;
+    T result = zero;
     std::for_each(edge_begin(t), edge_end(t), [op, &result](const edge& e) {
         result = op(result, e);
     });
-	return result;
+    return result;
 }
 
 template <class Metric, class Topology>
 typename Metric::weight_type accumulate_weight(const Metric& m, const Topology& t)
 {
     using W = typename Metric::weight_type;
-	return accumulate_edge(t,
-		weight_traits<W>::zero(),
-		[&m](const W& w, const edge& e) { return w + m(e); });
+    return accumulate_edge(t,
+        weight_traits<W>::zero(),
+        [&m](const W& w, const edge& e) { return w + m(e); });
 }
 
 template <class Metric, class Topology>
 double accumulate_cost(const Metric& m, const Topology& t)
 {
-	double result = 0;
-	return accumulate_edge(t, 0.0, [&m](double cost, const edge& e) { return cost + m(e)[0]; });
+    double result = 0;
+    return accumulate_edge(t, 0.0, [&m](double cost, const edge& e) { return cost + m(e)[0]; });
 }
 
 template <typename Topology, typename Out>
 void unique_nodes(const Topology& t, Out out_begin)
 {
-	std::vector<node> nodes;
+    std::vector<node> nodes;
 
-	auto first = edge_begin(t);
-	const auto last = edge_end(t);
-	while (first != last) {
-		nodes.push_back((*first).first);
-		nodes.push_back((*first).second);
-		++first;
-	}
+    auto first = edge_begin(t);
+    const auto last = edge_end(t);
+    while (first != last) {
+        nodes.push_back((*first).first);
+        nodes.push_back((*first).second);
+        ++first;
+    }
 
-	std::sort(begin(nodes), end(nodes));
-	std::copy(begin(nodes), std::unique(begin(nodes), end(nodes)), out_begin);
+    std::sort(begin(nodes), end(nodes));
+    std::copy(begin(nodes), std::unique(begin(nodes), end(nodes)), out_begin);
 }
 
 template <typename Topology>
 node max_node(const Topology& t)
 {
-	std::vector<node> un;
-	unique_nodes(t, std::back_inserter(un));
-	return *std::max_element(begin(un), end(un));
+    std::vector<node> un;
+    unique_nodes(t, std::back_inserter(un));
+    return *std::max_element(begin(un), end(un));
 }
 
 // Topological structure building algorithms.
@@ -149,12 +149,12 @@ namespace detail {
 
         const node mn = max_node(t);
 
-		out_preds.clear();
+        out_preds.clear();
         out_dists.clear();
-		for (node n = 0; n <= mn; ++n) {
-			out_dists.push_back(weight_traits<typename Metric::weight_type>::inf());
-			out_preds.push_back(n);
-		}
+        for (node n = 0; n <= mn; ++n) {
+            out_dists.push_back(weight_traits<typename Metric::weight_type>::inf());
+            out_preds.push_back(n);
+        }
         out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         std::set<node> open;
@@ -210,14 +210,14 @@ namespace detail {
             const WeightCmp& cmp) {
 
         const node mn = max_node(t);
-		const node N = nodes_count(t);
+        const node N = nodes_count(t);
 
-		out_preds.clear();
+        out_preds.clear();
         out_dists.clear();
-		for (node n = 0; n <= mn; ++n) {
-			out_dists.push_back(weight_traits<typename Metric::weight_type>::inf());
-			out_preds.push_back(n);
-		}
+        for (node n = 0; n <= mn; ++n) {
+            out_dists.push_back(weight_traits<typename Metric::weight_type>::inf());
+            out_preds.push_back(n);
+        }
         out_dists[src] = weight_traits<typename Metric::weight_type>::zero();
 
         for (node i = 0; i < (N - 1); ++i) {
