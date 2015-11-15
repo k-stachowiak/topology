@@ -3,13 +3,35 @@
 
 namespace detail {
 
-    /*
-	path lbpsa_feasible_find(...)
-	{
-		using W = typename MultiWeight::weight_type;
-		int weight_count = MuliWeight::weight_count;
+    template <class Path, class Metric>
+    bool lbpsa_constraints_fulfilled(const Path &p, const Metric &m, const std::vector<double>& cstr)
+    {
+        using MW = typename Metric::weight_type;
+        using W = typename MW::weight_type;
 
-		std::vector<double> lambdas { weight_count, 1.0 };
+        std::vector<W> weight = accumulate_weight(m, p);
+
+        auto first1 = begin(weight) + 1, last1 = end(cstr);
+        auto first2 = begin(cstr), last2 = end(cstr);
+        assert(std::distance(first1, last1) == std::distance(first2, last2));
+
+        while (first1 != last1) {
+            if (*first1++ > *first2++) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template <class Graph, class Metric>
+	path lbpsa_feasible_find(const Graph& g, const Metric& m, const std::vector<double>& cstr, node from, node to)
+	{
+        using MW = typename Metric::weight_type;
+		using W = typename MW::weight_type;
+		int weight_count = MW::weight_count;
+
+		std::vector<double> lambdas { weight_count, 0.0 };
 		double UB = accumulate_cost(m, g);
 		double lk = 2.0;
 		double prevL = std::numeric_limits<double>::infinity;
@@ -18,21 +40,21 @@ namespace detail {
 
 		while (true) {
 
-			auto lccmp = weight_cmp_lin_cmb<MultiWeight> { lambdas };
+			weight_cmp_lin_cmb<MW> lccmp { lambdas };
 
 			// Find and evaluate path.
 			// -----------------------
-			path p = dijkstra(g, m, from, to, llcmp);
-			if (!p.empty() && lbps_constraints_fulfilled(p, constraints)) {
-				upperBound = accumulate_cost(m, p);
+			path p = dijkstra(g, m, from, to, lccmp);
+			if (!p.empty() && lbpsa_constraints_fulfilled(p, m, cstr)) {
+				UB = accumulate_cost(m, p);
 				return p;
 			}
 
 			// Iteration step.
 			// ---------------
 			double L = metricProvider.getPreAdditive(path);
-			int metric = getMaxIndex(path, constraints);
-			double step = computeStep(path, metric, lk, L, constraints);
+			int metric = getMaxIndex(path, cstr);
+			double step = computeStep(path, metric, lk, L, cstr);
 			lambdas.set(metric - 1, lambdas.get(metric - 1) + step);
 			if (lambdas.get(metric - 1) < 0.0) {
 				lambdas.set(metric - 1, 0.0);
@@ -59,7 +81,7 @@ namespace detail {
 		}
 		return null;
 	}
-
+/*
     template <class Metric>
     bool lbpsa_conditions(typename Metric::weight_type current_weight, node dst)
     {
@@ -153,20 +175,18 @@ namespace detail {
             current_weight = old_weight;
 		}
     }
-
-    */
+*/
 }
 
 template <class Graph, class Metric>
 path lbpsa(const Graph& g, const Metric& m, const std::vector<double>& cstr, node src, node dst)
 {
-    /*
     using W = typename Metric::weight_type;
 
     W wth = weight_traits<W>::zero();
     path res { dst };
-    std::vector<path> fsbl;
-
+    std::vector<path> fsbl = lbpsa_feasible_find();
+/*
     detail::lbpsa_rec(g, m, cstr, src, dst, wth, res, fsbl);
 
     if (fsbl.empty()) {
@@ -177,8 +197,7 @@ path lbpsa(const Graph& g, const Metric& m, const std::vector<double>& cstr, nod
             return accumulate_weight(m, x) < accumulate_weight(m, y);
         });
     }
-
-    */
+*/
 	return {};
 }
 
